@@ -1,10 +1,15 @@
 import discord
 import random
-import os.path
-
+import asyncio
+import requests
+from json import loads
+import os
+import logging
 import teachers
 
+
 TOKEN = "ODAxODg5MTExNzQ0NzA4NjQx.YAnPbg.I9PjsuAQF1Tj4HkXbWtKHQ7zmts"
+DUB = "./TakZdar.mp3"
 
 VOJTA = 525816801133723658
 MARŤA = 772909380139483146
@@ -15,9 +20,11 @@ BOBAN_REPLY_CHANCE = 1
 POLITISCHE_GESPRACHE = ["trump", "biden", "babiš", "zeman"]
 
 boban_lines = []
+r = requests
+logging.basicConfig(level=logging.INFO)
 
-if os.path.exists("boban.txt"):
-    for line in open("boban.txt", "r"):
+with open("boban.txt", "r", encoding='utf-8') as f:
+    for line in f:
         boban_lines.append(line.strip())
     if not boban_lines:
         print("No boban lines!")
@@ -31,15 +38,17 @@ client = discord.Client()
 
 teachers = [teachers.Monika()]
 
+
 @client.event
 async def on_ready():
-    print("I'm ready!")
+    print("I'm ready! {0.name}".format(client.user))
+
 
 @client.event
 async def on_message(msg):
     global marťa_msg_sendone
 
-    if msg.author == client.user or msg.webhook_id != None:
+    if msg.author == client.user or msg.webhook_id is not None:
         return
 
     print("%s píše!" % msg.author.name)
@@ -59,6 +68,35 @@ async def on_message(msg):
             await msg.channel.send("Šťépo, netahej sem politiku...")      
 
     webhooks = await msg.channel.webhooks()
+
+    if msg.content.startswith("-among"):
+        url = "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?format=json&appid=945360"
+        info = r.get(url)
+        if info.status_code != 200:
+            await msg.channel.send("Chyba při získávání informací od Steamu")
+        info = loads(info.text)
+        stats = info["response"]
+        response = "Among Us právě hraje {0} hráčů".format(stats["player_count"])
+        await msg.channel.send(response)
+
+    if msg.content.startswith("-end"):
+        os.system("shutdown /s /t 180")
+        await msg.channel.send("Vypínám.. Dobrou noc")
+        quit()
+
+    if msg.content.startswith("-dub"):
+        try:
+            voice = await msg.author.voice.channel.connect()
+        except AttributeError:
+            await msg.channel.send("You have to be connected to a voice channel before using this command")
+            return
+        voice.play(discord.FFmpegPCMAudio(DUB))
+        counter = 0
+        duration = 41
+        while counter < duration:
+            await asyncio.sleep(1)
+            counter = counter + 1
+        await voice.disconnect()
 
     for teacher in teachers:
         await teacher.handleMessage(msg, webhooks)
