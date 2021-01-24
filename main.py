@@ -1,9 +1,9 @@
 import discord
 import random
-import os.path
 import asyncio
 import requests
 from json import loads
+import os
 import logging
 import teachers
 
@@ -23,8 +23,8 @@ boban_lines = []
 r = requests
 logging.basicConfig(level=logging.INFO)
 
-if os.path.exists("boban.txt"):
-    for line in open("boban.txt", "r"):
+with open("boban.txt", "r", encoding='utf-8') as f:
+    for line in f:
         boban_lines.append(line.strip())
     if not boban_lines:
         print("No boban lines!")
@@ -41,14 +41,14 @@ teachers = [teachers.Monika()]
 
 @client.event
 async def on_ready():
-    print("I'm ready!")
+    print("I'm ready! {0.name}".format(client.user))
 
 
 @client.event
 async def on_message(msg):
     global marťa_msg_sendone
 
-    if msg.author == client.user or msg.webhook_id != None:
+    if msg.author == client.user or msg.webhook_id is not None:
         return
 
     print("%s píše!" % msg.author.name)
