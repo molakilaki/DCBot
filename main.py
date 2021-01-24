@@ -7,7 +7,6 @@ import os
 import logging
 import teachers
 
-
 TOKEN = "ODAxODg5MTExNzQ0NzA4NjQx.YAnPbg.I9PjsuAQF1Tj4HkXbWtKHQ7zmts"
 DUB = "./TakZdar.mp3"
 
@@ -39,6 +38,26 @@ client = discord.Client()
 teachers = [teachers.Monika()]
 
 
+async def proc_webhooks(channel: discord.TextChannel) -> list[discord.Webhook]:
+    # V případě že se v kanále nenachází žádný webhook, vytvoří si jeden
+    try:
+        hooks = await channel.webhooks()
+    except discord.Forbidden:
+        await channel.send("Zkontroluj moje práva\nPotřebuji Manage Webhooks abych mohl pokračovat")
+        return None
+    for hook in hooks:
+        # Některé webhooky jsou typu, který je pro nás nepoužitelný. Ty smaže
+        if hook.type == discord.WebhookType.channel_follower:
+            hooks.remove(hook)
+
+    if not hooks:
+        try:
+            hooks.append(await channel.create_webhook(name="webhook", reason="Vytvořil si potřebný webhook"))
+        except discord.HTTPException:
+            print("Chyba při připojování")
+    return hooks
+
+
 @client.event
 async def on_ready():
     print("I'm ready! {0.name}".format(client.user))
@@ -65,9 +84,7 @@ async def on_message(msg):
 
     elif msg.author.id == ŠTĚPA:
         if any((s in msg.content.lower()) for s in POLITISCHE_GESPRACHE):
-            await msg.channel.send("Šťépo, netahej sem politiku...")      
-
-    webhooks = await msg.channel.webhooks()
+            await msg.channel.send("Šťépo, netahej sem politiku...")
 
     if msg.content.startswith("-among"):
         url = "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?format=json&appid=945360"
@@ -78,6 +95,7 @@ async def on_message(msg):
         stats = info["response"]
         response = "Among Us právě hraje {0} hráčů".format(stats["player_count"])
         await msg.channel.send(response)
+        return
 
     if msg.content.startswith("-end"):
         os.system("shutdown /s /t 180")
@@ -97,8 +115,11 @@ async def on_message(msg):
             await asyncio.sleep(1)
             counter = counter + 1
         await voice.disconnect()
+        return
 
+    webhooks = await proc_webhooks(msg.channel)
     for teacher in teachers:
         await teacher.handleMessage(msg, webhooks)
+
 
 client.run(TOKEN)
