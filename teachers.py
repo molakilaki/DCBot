@@ -33,18 +33,40 @@ class Monika(Teacher):
         "Myslím, že už jste dost staří na to, abyste věděli, že nulou se dělit nedá!",
         "To, že nulou nejde dělit, se učí v druhém ročníku základní školy, ne?"
     ]
+    overloadMessages = [
+        "Dost!",
+        "Uklidněte se!",
+        "Můžete být prosím zticha?",
+        "Mě už z vás třeští hlava!"
+    ]
 
     def __init__(self):
         self.username = "Monika Barešová"
         self.avatar_url = "https://scontent-prg1-1.xx.fbcdn.net/v/t1.0-9/101985663_3227495353947932_6200059714416410624_o.jpg?_nc_cat=102&ccb=2&_nc_sid=09cbfe&_nc_ohc=1bMHrkYViMMAX_vEkC0&_nc_ht=scontent-prg1-1.xx&oh=075d74b112e02a94a166926e7feb9fec&oe=60322A6B"
+        self.isProcessingMessage = False
+        self.isOverloaded = False
 
     async def handleMessage(self, message: discord.Message, webhooks: list):
+        if self.isProcessingMessage:
+            self.isOverloaded = True
+            return
+        self.isProcessingMessage = True
+
+        try:
+            await self._handleMessage(message, webhooks)
+        finally:
+            self.isProcessingMessage = False
+            self.isOverloaded = False
+
+    async def _handleMessage(self, message: discord.Message, webhooks: list):
         m = Monika.mathRegex.search(message.content)
         if webhooks and m:
             l = float(m.group(1))
             r = float(m.group(4))
 
             op = m.group(3)
+
+            await asyncio.sleep(2 + random.random() * 2)
 
             if op == "/" and r == 0:
                 await self.sendMessage(random.choice(Monika.divisionByZeroErrors), webhooks[0])
@@ -75,3 +97,7 @@ class Monika(Teacher):
                 if final == result:
                     await asyncio.sleep(random.random() * 2 + 2)
                     await self.sendMessage("Teda to bylo vlastně to co jsem původně říkala, že? No vidíte to.", webhooks[0])
+
+            if self.isOverloaded:
+                await asyncio.sleep(random.random())
+                await self.sendMessage(random.choice(Monika.overloadMessages), webhooks[0])
