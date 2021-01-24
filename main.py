@@ -70,7 +70,7 @@ async def on_message(msg):
     if msg.author == client.user or msg.webhook_id is not None:
         return
 
-    print("%s píše!" % msg.author.name)
+    print("%s píše!" % msg.author.nick)
 
     # user specific responses
     if msg.author.id == VOJTA:
