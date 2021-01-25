@@ -44,7 +44,7 @@ async def proc_webhooks(channel: discord.TextChannel) -> list[discord.Webhook]:
         hooks = await channel.webhooks()
     except discord.Forbidden:
         await channel.send("Zkontroluj moje práva\nPotřebuji Manage Webhooks abych mohl pokračovat")
-        return None
+        return []
     for hook in hooks:
         # Některé webhooky jsou typu, který je pro nás nepoužitelný. Ty smaže
         if hook.type == discord.WebhookType.channel_follower:
