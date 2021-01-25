@@ -22,6 +22,7 @@ boban_lines = []
 r = requests
 logging.basicConfig(level=logging.INFO)
 
+# smím se zeptat pročs odstranil kontrolu, jestli boban.txt existuje?
 with open("boban.txt", "r", encoding='utf-8') as f:
     for line in f:
         boban_lines.append(line.strip())
@@ -45,14 +46,21 @@ async def proc_webhooks(channel: discord.TextChannel) -> list[discord.Webhook]:
     except discord.Forbidden:
         await channel.send("Zkontroluj moje práva\nPotřebuji Manage Webhooks abych mohl pokračovat")
         return []
-    for hook in hooks:
-        # Některé webhooky jsou typu, který je pro nás nepoužitelný. Ty smaže
-        if hook.type == discord.WebhookType.channel_follower:
-            hooks.remove(hook)
+
+    # TOHLE BYCH NEDĚLAL
+    # (odstraňovat prvky z kolekce kterou procházíme způsobí, že některé přeskočíme)
+    # viz. https://stackoverflow.com/questions/10665591/how-to-remove-list-elements-in-a-for-loop-in-python
+    # for hook in hooks:
+    #     # Některé webhooky jsou typu, který je pro nás nepoužitelný. Ty smaže
+    #     if hook.type == discord.WebhookType.channel_follower:
+    #         hooks.remove(hook)
+
+    # ČILI MÍSTO TOHO BYCH UDĚLAL TOHLE
+    hooks = [hook for hook in hooks if hook.type != discord.WebhookType.channel_follower]
 
     if not hooks:
         try:
-            hooks.append(await channel.create_webhook(name="webhook", reason="Vytvořil si potřebný webhook"))
+            hooks.append(await channel.create_webhook(name="webhook", reason="Vytvořil si potřebný webhook")) # ok
         except discord.HTTPException:
             print("Chyba při připojování")
     return hooks
