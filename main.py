@@ -22,14 +22,18 @@ boban_lines = []
 r = requests
 logging.basicConfig(level=logging.INFO)
 
-with open("boban.txt", "r", encoding='utf-8') as f:
-    for line in f:
-        boban_lines.append(line.strip())
-    if not boban_lines:
-        print("No boban lines!")
-    else:
-        for line in boban_lines:
-            print("loaded boban line: %s" % line)
+try:
+    with open("boban.txt", "r", encoding='utf-8') as f:
+        for line in f:
+            boban_lines.append(line.strip())
+        if not boban_lines:
+            print("No boban lines!")
+        else:
+            for line in boban_lines:
+                print("loaded boban line: %s" % line)
+except FileNotFoundError:
+    print("No boban lines!")
+
 
 marťa_msg_sendone = False
 
