@@ -4,12 +4,14 @@ import random
 import typing
 import asyncio
 
+
 class Teacher:
     async def sendMessage(self, message: str, webhook: discord.Webhook):
-        await webhook.send(message, username = self.username, avatar_url = self.avatar_url)
+        await webhook.send(message, username=self.username, avatar_url=self.avatar_url)
     
     def handleMessage(self, message: discord.Message):
         pass
+
 
 class Monika(Teacher):
     mathRegex = re.compile("(\d+(\.\d+)?)\s*([\+\-\*\/])\s*(\d+(\.\d+)?)")
