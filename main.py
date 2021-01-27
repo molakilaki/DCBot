@@ -83,25 +83,38 @@ async def on_message(msg: discord.Message):
             marťa_msg_sendone = False
 
     if msg.content.startswith("-nick"):
-        replacements = ["<@!", ">"]
+        replacements = ["<@", ">", "!"]
         if len(msg.content.split()) >= 3:
             args = msg.content.split(" ", 2)
-            if args[1].startswith("<@!") and args[1].endswith(">"):
+            print(msg.content)
+            print(args)
+            if args[1].startswith("<@") and args[1].endswith(">"):
                 target = args[1]
                 print(target)
                 for word in replacements:
                     target = target.replace(word, "")
                 target = int(target)
                 nick = args[2]
+                while nick.startswith(" "):
+                    temp = nick.split(" ", 1)
+                    nick = temp[1]
+                if len(nick) > 32:
+                    await msg.channel.send("Přezdívka může mít maximálně 32 charakterů")
+                    return
+                if nick.lower() == "none" or nick.lower() == "off":
+                    nick = None
             else:
                 await msg.channel.send("Druhý argument musí být člověk jehož jméno měníš.")
                 return
         else:
-            await msg.channel.send("Příkaz se zadává ve formátu: '-nick @cíl přezdívka'\nzkontroluj svou předchozí zprávu")
+            await msg.channel.send("Příkaz se zadává ve formátu: '-nick @cíl přezdívka'")
             return
         target = await msg.guild.fetch_member(member_id=target)
         try:
             await target.edit(nick=nick, reason="Změnil {0.author.name} v kanálu {0.channel.name}".format(msg))
+            if not nick:
+                nick = target.name
+            await msg.channel.send("Změněno z '{0}' na '{1}'".format(target.display_name, nick))
         except discord.Forbidden:
             await msg.channel.send("Bohužel, tahle přezdívka pořád nejde měnit")
         return
