@@ -100,7 +100,7 @@ async def on_message(msg: discord.Message):
             await msg.channel.send("Příkaz se zadává ve formátu: '-nick @cíl přezdívka'\nzkontroluj svou předchozí zprávu")
             return
         target = await msg.guild.fetch_member(member_id=target)
-        await target.edit(nick=nick, reason="change by {0.name}".format(msg.author))
+        await target.edit(nick=nick, reason="Změněno {0.name}".format(msg.author))
         return
 
     if msg.content.startswith("-among"):
