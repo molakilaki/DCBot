@@ -98,7 +98,7 @@ async def on_message(msg: discord.Message):
                 if len(nick) > 32:
                     await msg.channel.send("Přezdívka může mít maximálně 32 charakterů")
                     return
-                if nick.lower() == "none" or nick.lower() == "off":
+                if nick.lower() == "none" or nick.lower() == "off" or nick.lower() == "clear":
                     nick = None
             else:
                 await msg.channel.send("Druhý argument musí být člověk jehož jméno měníš.")
