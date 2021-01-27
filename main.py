@@ -16,6 +16,7 @@ MARŤA = 772909380139483146
 BOBAN_REPLY_CHANCE = 1
 
 POLITISCHE_GESPRACHE = ["trump", "biden", "babiš", "zeman"]
+TAG_REPLACEMENTS = ["<@", ">", "!"]
 
 boban_lines = []
 r = requests
@@ -83,15 +84,11 @@ async def on_message(msg: discord.Message):
             marťa_msg_sendone = False
 
     if msg.content.startswith("-nick"):
-        replacements = ["<@", ">", "!"]
         if len(msg.content.split()) >= 3:
             args = msg.content.split(" ", 2)
-            print(msg.content)
-            print(args)
             if args[1].startswith("<@") and args[1].endswith(">"):
                 target = args[1]
-                print(target)
-                for word in replacements:
+                for word in TAG_REPLACEMENTS:
                     target = target.replace(word, "")
                 target = int(target)
                 nick = args[2]
