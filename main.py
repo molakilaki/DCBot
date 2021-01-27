@@ -101,7 +101,7 @@ async def on_message(msg: discord.Message):
             return
         target = await msg.guild.fetch_member(member_id=target)
         try:
-            await target.edit(nick=nick, reason="Změněno {0.name}".format(msg.author))
+            await target.edit(nick=nick, reason="Změnil {0.author.name} v kanálu {0.channel.name}".format(msg))
         except discord.Forbidden:
             await msg.channel.send("Bohužel, tahle přezdívka pořád nejde měnit")
         return
