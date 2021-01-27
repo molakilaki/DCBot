@@ -12,7 +12,6 @@ DUB = "./TakZdar.mp3"
 
 VOJTA = 525816801133723658
 MARŤA = 772909380139483146
-ŠTĚPA = 470490558713036801
 
 BOBAN_REPLY_CHANCE = 1
 
@@ -65,7 +64,7 @@ async def on_ready():
 
 
 @client.event
-async def on_message(msg):
+async def on_message(msg: discord.Message):
     global marťa_msg_sendone
 
     if msg.author == client.user or msg.webhook_id is not None:
@@ -83,9 +82,26 @@ async def on_message(msg):
             await msg.channel.send("Zdravím!")
             marťa_msg_sendone = False
 
-    elif msg.author.id == ŠTĚPA:
-        if any((s in msg.content.lower()) for s in POLITISCHE_GESPRACHE):
-            await msg.channel.send("Šťépo, netahej sem politiku...")
+    if msg.content.startswith("-nick"):
+        replacements = ["<@!", ">"]
+        if len(msg.content.split()) >= 3:
+            args = msg.content.split(" ", 2)
+            if args[1].startswith("<@!") and args[1].endswith(">"):
+                target = args[1]
+                print(target)
+                for word in replacements:
+                    target = target.replace(word, "")
+                target = int(target)
+                nick = args[2]
+            else:
+                await msg.channel.send("Druhý argument musí být člověk jehož jméno měníš.")
+                return
+        else:
+            await msg.channel.send("Příkaz se zadává ve formátu: '-nick @cíl přezdívka'\nzkontroluj svou předchozí zprávu")
+            return
+        target = await msg.guild.fetch_member(member_id=target)
+        await target.edit(nick=nick, reason="change by {0.name}".format(msg.author))
+        return
 
     if msg.content.startswith("-among"):
         url = "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?format=json&appid=945360"
