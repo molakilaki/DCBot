@@ -12,11 +12,11 @@ DUB = "./TakZdar.mp3"
 
 VOJTA = 525816801133723658
 MARŤA = 772909380139483146
-ŠTĚPA = 470490558713036801
 
 BOBAN_REPLY_CHANCE = 1
 
 POLITISCHE_GESPRACHE = ["trump", "biden", "babiš", "zeman"]
+TAG_REPLACEMENTS = ["<@", ">", "!"]
 
 boban_lines = []
 r = requests
@@ -65,7 +65,7 @@ async def on_ready():
 
 
 @client.event
-async def on_message(msg):
+async def on_message(msg: discord.Message):
     global marťa_msg_sendone
 
     if msg.author == client.user or msg.webhook_id is not None:
@@ -83,9 +83,33 @@ async def on_message(msg):
             await msg.channel.send("Zdravím!")
             marťa_msg_sendone = False
 
-    elif msg.author.id == ŠTĚPA:
-        if any((s in msg.content.lower()) for s in POLITISCHE_GESPRACHE):
-            await msg.channel.send("Šťépo, netahej sem politiku...")
+    if msg.content.startswith("-nick"):
+        if len(msg.content.split()) < 3:
+            await msg.channel.send("Příkaz se zadává ve formátu: '-nick @cíl přezdívka'")
+            return
+        args = msg.content.split(" ", 2)
+        if not (args[1].startswith("<@") and args[1].endswith(">") and msg.mentions):
+            await msg.channel.send("Druhý argument musí být uživatel, jehož jméno měníš.")
+            return
+        target = msg.mentions[0]
+        nick = args[2]
+        nick = nick.strip()
+        if len(nick) > 32:
+            await msg.channel.send("Přezdívka může mít maximálně 32 charakterů")
+            return
+        if nick.lower() == "none" or nick.lower() == "off" or nick.lower() == "clear":
+            nick = None
+        try:
+            before = target.display_name
+            await target.edit(nick=nick, reason="Změnil {0.author.name} v kanálu {0.channel.name}".format(msg))
+            if not nick:
+                nick = target.name
+            await msg.channel.send("Změněno z '{0}' na '{1}'".format(before, nick))
+        except discord.Forbidden:
+            await msg.channel.send("Bohužel, tahle přezdívka pořád nejde měnit")
+        except discord.HTTPException:
+            print("Chyba při připojování na straně Discordu")
+        return
 
     if msg.content.startswith("-among"):
         url = "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?format=json&appid=945360"
