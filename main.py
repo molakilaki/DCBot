@@ -42,7 +42,7 @@ client = discord.Client()
 teachers = [teachers.Monika()]
 
 
-async def proc_webhooks(channel: discord.TextChannel) -> list[discord.Webhook]:
+async def proc_webhooks(channel: discord.TextChannel):
     # V případě že se v kanále nenachází žádný webhook, vytvoří si jeden
     try:
         hooks = await channel.webhooks()
