@@ -89,13 +89,11 @@ async def on_message(msg: discord.Message):
             return
         args = msg.content.split(" ", 2)
         if not (args[1].startswith("<@") and args[1].endswith(">") and msg.mentions):
-            await msg.channel.send("Druhý argument musí být uživatel jehož jméno měníš.")
+            await msg.channel.send("Druhý argument musí být uživatel, jehož jméno měníš.")
             return
         target = msg.mentions[0]
         nick = args[2]
-        while nick.startswith(" "):
-            temp = nick.split(" ", 1)
-            nick = temp[1]
+        nick.strip()
         if len(nick) > 32:
             await msg.channel.send("Přezdívka může mít maximálně 32 charakterů")
             return
