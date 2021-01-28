@@ -93,7 +93,7 @@ async def on_message(msg: discord.Message):
             return
         target = msg.mentions[0]
         nick = args[2]
-        nick.strip()
+        nick = nick.strip()
         if len(nick) > 32:
             await msg.channel.send("Přezdívka může mít maximálně 32 charakterů")
             return
