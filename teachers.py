@@ -250,4 +250,5 @@ class Monika(Teacher):
                 await self.sendMessage(random.choice(Monika.MSG_DIVIDE_BY_ZERO), webhook)
 
             except Exception as ex:
+                print("Monča chybovala: %s" % ex.args)
                 await self.sendMessage(random.choice(Monika.MSG_ERROR), webhook)
