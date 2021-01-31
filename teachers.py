@@ -48,7 +48,9 @@ class Monika(Teacher):
     MSG_DIVIDE_BY_ZERO = [
         "Nulou dělit nemůžete!",
         "Myslím, že už jste dost staří na to, abyste věděli, že nulou se dělit nedá!",
-        "To, že nulou nejde dělit, se učí v druhém ročníku základní školy, ne?"
+        "To, že nulou nejde dělit, se učí v druhém ročníku základní školy, ne?",
+        "Nulou nedělíme...",
+        "Vám nikdo neřekl, že nulou nelze dělit?"
     ]
     MSG_TIRED = [
         "Uklidněte se!",
@@ -61,7 +63,8 @@ class Monika(Teacher):
         "Nashledanou!",
         "Už jsem na to moc unavená.",
         "Prosím, nechtě mě napospas mým depresím.",
-        "Mějte se fanfárově."
+        "Mějte se fanfárově.",
+        "Nechme si to na zítra."
     ]
     MSG_ERROR = [
         "Už jsem stará.",
@@ -70,7 +73,8 @@ class Monika(Teacher):
         "Zkuste to říct nějak jinak.",
         "Jsem jediná, kdo nechápe, co se tady snažíte říct?",
         "Co je to za klikiháky?",
-        "Nejsem si jistá, jestli to co říkáte dává smysl."
+        "Nejsem si jistá, jestli to co říkáte dává smysl.",
+        "Jsem se do toho nějak zamotala."
     ]
     MSG_CHECK_YES = [
         "To je, myslím, správně.",
@@ -114,7 +118,10 @@ class Monika(Teacher):
         "Zamyslete se nad tím, co jste právě řekl.",
         "Zkuste se více soustředit.",
         "Jak pravil Einstein: pouze dvě věci jsou nekonečné. Vesmír a lidská hloupost. U té první si však nejsem tak jist. O té druhé jste mě právě ujistil vy!",
-        "Vy jste se dneska asi špatně vyspal, že?"
+        "Vy jste se dneska asi špatně vyspal, že?",
+        "Moc rozumu jste teda nepobral.(25%)",
+        "Kdybyste dával pozor, tak byste věděl.",
+        "A já myslela že já jsem ten dement!(50%)"
     ]
     MSG_SORRY = [
         "Teda omlouvám se, to jsem přehnala.",
@@ -124,7 +131,8 @@ class Monika(Teacher):
         "Bez urážky.",
         "To mě ulítlo. Nic jsem neřekla.",
         "Jak smažu zprávu?",
-        "Teda omlouvám se, nechtěla jsem se vás dotknout."
+        "Teda omlouvám se, nechtěla jsem se vás dotknout.",
+        "Odpusťte mi. Poslední dobou je toho na mě nějak moc."
     ]
 
     def __init__(self):
@@ -160,7 +168,7 @@ class Monika(Teacher):
 
     async def _handleMessage(self, message: discord.Message, webhooks: list):
         m = Monika.mathRegex.search(message.content)
-        if webhooks and m:
+        if webhooks and m and re.search(r"\d", m.group(0)):
             webhook = webhooks[0]
 
             await asyncio.sleep(random.random() * 2 + 2)

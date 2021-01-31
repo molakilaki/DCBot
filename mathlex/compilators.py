@@ -15,6 +15,8 @@ def compileCompare(tokens: List[Token]) -> Optional[Node]:
         if token.kind == "operator" and token.data in ("<", ">", "<=", ">=", "!=", "==", "=", "/=", "=/="):
             left = compileNode(tokens[:i])
             right = compileNode(tokens[i+1:])
+            if left == None or right == None:
+                return None
 
             if token.data in ("=", "=="):
                 return CompareNode(left, right, lambda a, b: a == b)
@@ -30,12 +32,14 @@ def compileCompare(tokens: List[Token]) -> Optional[Node]:
                 return CompareNode(left, right, lambda a, b: a <= b)
 
 def compilePlusMinus(tokens: List[Token]) -> Optional[Node]:
-    for i in range(len(tokens)):
-        i = len(tokens) - 1 - i
+    for i in range(len(tokens) - 1):
+        i = len(tokens) - 1 - i # odzadu
         token = tokens[i]
         if token.kind == "operator" and token.data in ("+", "-"):
-            left = ConstantNode(0) if i == 0 else compileNode(tokens[:i])
+            left = compileNode(tokens[:i])
             right = compileNode(tokens[i+1:])
+            if left == None or right == None:
+                return None
 
             if token.data == "+":
                 return BinaryNode(left, right, lambda a, b: a + b)
@@ -43,12 +47,14 @@ def compilePlusMinus(tokens: List[Token]) -> Optional[Node]:
                 return BinaryNode(left, right, lambda a, b: a - b)
 
 def compileMultiplyDivide(tokens: List[Token]) -> Optional[Node]:
-    for i in range(len(tokens)):
-        i = len(tokens) - 1 - i
+    for i in range(len(tokens) - 1):
+        i = len(tokens) - 1 - i # odzadu
         token = tokens[i]
         if token.kind == "operator" and token.data in ("*", "/"):
             left = compileNode(tokens[:i])
             right = compileNode(tokens[i+1:])
+            if left == None or right == None:
+                return None
 
             if token.data == "*":
                 return BinaryNode(left, right, lambda a, b: a * b)
@@ -56,8 +62,8 @@ def compileMultiplyDivide(tokens: List[Token]) -> Optional[Node]:
                 return BinaryNode(left, right, lambda a, b: a / b)
 
 def compilePower(tokens: List[Token]) -> Optional[Node]:
-    for i in range(len(tokens)):
-        i = len(tokens) - 1 - i
+    for i in range(len(tokens) - 1):
+        i = len(tokens) - 1 - i # odzadu
         token = tokens[i]
         if token.kind == "operator" and token.data == "^":
             left = compileNode(tokens[:i])
@@ -87,6 +93,8 @@ def compileSubexpression(tokens: List[Token]) -> Optional[Node]:
 def compileConstant(tokens: List[Token]) -> Optional[Node]:
     if len(tokens) == 1 and tokens[0].kind == "number":
         return ConstantNode(tokens[0].data)
+    if len(tokens) == 2 and tokens[0].kind == "operator" and tokens[0].data in ("+", "-") and tokens[1].kind == "number":
+        return ConstantNode(tokens[1].data * (-1 if tokens[0].data == "-" else 1))
 
 COMPILE_ORDER_CALCULATOR = [
     compilePlusMinus,
