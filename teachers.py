@@ -208,7 +208,7 @@ class Monika(Teacher):
                         sorry_chance = 0
 
                         # u některých MSG_CHECK_NO zpráv je na konci uvedena šance, že se za ně Monča omluví.
-                        percent_match = re.search("\(\d+%\)$", msg) 
+                        percent_match = re.search(r"\((\d+)%\)$", msg) 
                         if percent_match:
                             sorry_chance = float(percent_match.group(1)) / 100 # nastavit šanci na omluvu
                             msg = msg[:-len(percent_match.group(0))] # zkrátit message o to, co odpovídá regexu (na konci)
@@ -251,5 +251,5 @@ class Monika(Teacher):
                 await self.sendMessage(random.choice(Monika.MSG_DIVIDE_BY_ZERO), webhook)
 
             except Exception as ex:
-                print("Monča chybovala: %s" % ex.args)
+                print("Monča chybovala: %s, %s" % (type(ex).__name__, ex.args))
                 await self.sendMessage(random.choice(Monika.MSG_ERROR), webhook)
