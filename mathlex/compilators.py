@@ -5,11 +5,13 @@ from __future__ import annotations
 from typing import *
 import math
 
-from mathlex import *
-from nodes import *
+from .mathlex import *
+from .nodes import *
 
 def compileCompare(tokens: List[Token]) -> Optional[Node]: 
-    for i, token in enumerate(tokens):
+    for i in range(len(tokens)):
+        i = len(tokens) - 1 - i
+        token = tokens[i]
         if token.kind == "operator" and token.data in ("<", ">", "<=", ">=", "!=", "==", "=", "/=", "=/="):
             left = compileNode(tokens[:i])
             right = compileNode(tokens[i+1:])
@@ -28,9 +30,11 @@ def compileCompare(tokens: List[Token]) -> Optional[Node]:
                 return CompareNode(left, right, lambda a, b: a <= b)
 
 def compilePlusMinus(tokens: List[Token]) -> Optional[Node]:
-    for i, token in enumerate(tokens):
+    for i in range(len(tokens)):
+        i = len(tokens) - 1 - i
+        token = tokens[i]
         if token.kind == "operator" and token.data in ("+", "-"):
-            left = compileNode(tokens[:i])
+            left = ConstantNode(0) if i == 0 else compileNode(tokens[:i])
             right = compileNode(tokens[i+1:])
 
             if token.data == "+":
@@ -39,7 +43,9 @@ def compilePlusMinus(tokens: List[Token]) -> Optional[Node]:
                 return BinaryNode(left, right, lambda a, b: a - b)
 
 def compileMultiplyDivide(tokens: List[Token]) -> Optional[Node]:
-    for i, token in enumerate(tokens):
+    for i in range(len(tokens)):
+        i = len(tokens) - 1 - i
+        token = tokens[i]
         if token.kind == "operator" and token.data in ("*", "/"):
             left = compileNode(tokens[:i])
             right = compileNode(tokens[i+1:])
@@ -50,7 +56,9 @@ def compileMultiplyDivide(tokens: List[Token]) -> Optional[Node]:
                 return BinaryNode(left, right, lambda a, b: a / b)
 
 def compilePower(tokens: List[Token]) -> Optional[Node]:
-    for i, token in enumerate(tokens):
+    for i in range(len(tokens)):
+        i = len(tokens) - 1 - i
+        token = tokens[i]
         if token.kind == "operator" and token.data == "^":
             left = compileNode(tokens[:i])
             right = compileNode(tokens[i+1:])
@@ -69,8 +77,8 @@ UNARY_FUNCTIONS = {
 }
 
 def compileFunction(tokens: List[Token]) -> Optional[Node]:
-    if len(tokens) == 2 and tokens[0].kind == "word" and tokens[0].data.lower in UNARY_FUNCTIONS and tokens[1].kind == "subexpr":
-        return UnaryNode(compileNode(tokens[1].data), UNARY_FUNCTIONS[tokens[0].data.lower])
+    if len(tokens) == 2 and tokens[0].kind == "word" and tokens[0].data.lower() in UNARY_FUNCTIONS and tokens[1].kind == "subexpr":
+        return UnaryNode(compileNode(tokens[1].data), UNARY_FUNCTIONS[tokens[0].data.lower()])
 
 def compileSubexpression(tokens: List[Token]) -> Optional[Node]:
     if len(tokens) == 1 and tokens[0].kind == "subexpr":

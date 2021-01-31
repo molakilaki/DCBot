@@ -7,8 +7,8 @@ from __future__ import annotations
 from typing import *
 import re
 
-import nodes
-import compilators
+from . import nodes
+from . import compilators
 
 class Token:
     def __init__(self, kind: str, data: Union[str, List[Token]]):
@@ -45,6 +45,8 @@ def tokenize(expression: str) -> List[Token]:
     while expression:
         # odstranit mezery ze začátku řetězce
         expression = expression.lstrip()
+        if expression == "":
+            break
 
         # zkontrolovat závorky
         if expression[0] == "(":
@@ -78,18 +80,3 @@ def tokenize(expression: str) -> List[Token]:
     
     return tokens
 
-def main():
-    while True:
-        # tokens = tokenize(input("expr: "))
-
-        # for token in tokens:
-        #     print(token)
-
-        node = compilators.compileNode(tokenize(input("expr: ")), compilators.COMPILE_ORDER_WITH_COMPARE)
-        if node:
-            print(node())
-        else:
-            print("fail!!!") 
-
-if __name__ == "__main__":
-    main()
