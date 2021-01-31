@@ -142,10 +142,11 @@ class Monika(Teacher):
         self.energy = 100
         self.replenishingTask: typing.Optional[asyncio.Task] = None
 
-    async def replenishEnergyAfter10s(self):
+    async def replenishEnergyAfter10s(self):        
         try:
-            await asyncio.sleep(10000)
+            await asyncio.sleep(10)
             self.energy = 100
+            print("Monča se vyspala")
         except asyncio.CancelledError:
             pass
 
@@ -168,7 +169,7 @@ class Monika(Teacher):
 
     async def _handleMessage(self, message: discord.Message, webhooks: list):
         m = Monika.mathRegex.search(message.content)
-        if webhooks and m and re.search(r"\d", m.group(0)):
+        if webhooks and m and re.search(r"\d", m.group(0)) and (re.search(r"[a-zA-Z]", m.group(0)) or re.search(r"[+\-*\/=!^<>]", m.group(0))):
             webhook = webhooks[0]
 
             await asyncio.sleep(random.random() * 2 + 2)
