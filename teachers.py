@@ -194,7 +194,11 @@ class Monika(Teacher):
                 if node == None:
                     return
 
-                result = node()
+                try:
+                    result = node()
+                except ZeroDivisionError:
+                    await self.sendMessage(random.choice(Monika.MSG_DIVIDE_BY_ZERO), webhook)
+                    return
 
                 if isinstance(result, bool):
                     # pokud výsledek je ano nebo ne (kontrola příkladu)
@@ -246,9 +250,6 @@ class Monika(Teacher):
 
                 else:
                     await self.sendMessage("Teda teď jste mě dostal.", webhook)
-
-            except ZeroDivisionError:
-                await self.sendMessage(random.choice(Monika.MSG_DIVIDE_BY_ZERO), webhook)
 
             except Exception as ex:
                 print("Monča chybovala: %s, %s" % (type(ex).__name__, ex.args))
