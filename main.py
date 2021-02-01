@@ -124,7 +124,7 @@ async def on_message(msg: discord.Message):
 
     if msg.content.startswith("-end"):
         os.system("shutdown /s /t 180")
-        await msg.channel.send("Vypínám.. Dobrou noc")
+        await msg.channel.send("Loučím se.")
         quit()
 
     if msg.content.startswith("-dub"):
