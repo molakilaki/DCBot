@@ -13,7 +13,7 @@ class Teacher:
     def handleMessage(self, message: discord.Message):
         pass
 
-def doEasterEggŠtalin(tokens: typing.List[mathlex.Token]):
+def doEasterEggStalin(tokens: typing.List[mathlex.Token]):
     if (random.random() <= 0.1 and len(tokens) == 3 and 
         tokens[0].kind == "number" and tokens[0].data == 2 and 
         tokens[1].kind == "operator" and tokens[1].data == "+" and 
@@ -185,7 +185,7 @@ class Monika(Teacher):
                 group = m.group(0)
                 tokens = mathlex.tokenize(group)
 
-                if doEasterEggŠtalin(tokens):
+                if doEasterEggStalin(tokens):
                     await self.sendMessage("2 + 2 = 5, jak pravil strýc Štalin!", webhook)
                     return
 
