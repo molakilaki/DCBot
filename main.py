@@ -4,7 +4,6 @@ import asyncio
 import requests
 from json import loads
 from sys import exit
-import os
 import logging
 import teachers
 
@@ -124,9 +123,8 @@ async def on_message(msg: discord.Message):
         return
 
     if msg.content.startswith("-end"):
-        os.system("shutdown /s /t 180")
         await msg.channel.send("Loučím se.")
-        exit()
+        exit("Ukončeno na příkaz {0.author.name}".format(msg))
 
     if msg.content.startswith("-dub"):
         try:
