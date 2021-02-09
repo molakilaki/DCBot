@@ -191,7 +191,7 @@ class Monika(Teacher):
 
                 node = compilators.compileNode(tokens, compilators.COMPILE_ORDER_WITH_COMPARE)
 
-                if node == None:
+                if not node:
                     return
 
                 try:

@@ -3,19 +3,19 @@ import random
 import asyncio
 import requests
 from json import loads
-import os
+from sys import exit
 import logging
 import teachers
 
 TOKEN = "ODAxODg5MTExNzQ0NzA4NjQx.YAnPbg.I9PjsuAQF1Tj4HkXbWtKHQ7zmts"
 DUB = "./TakZdar.mp3"
+DELETE_TIME = 20.0
 
 VOJTA = 525816801133723658
 MARŤA = 772909380139483146
 
 BOBAN_REPLY_CHANCE = 1
 
-POLITISCHE_GESPRACHE = ["trump", "biden", "babiš", "zeman"]
 TAG_REPLACEMENTS = ["<@", ">", "!"]
 
 boban_lines = []
@@ -76,26 +76,26 @@ async def on_message(msg: discord.Message):
     # user specific responses
     if msg.author.id == VOJTA:
         if boban_lines and random.random() <= BOBAN_REPLY_CHANCE:
-            await msg.channel.send(random.choice(boban_lines))
+            await msg.channel.send(random.choice(boban_lines), delete_after=DELETE_TIME)
 
     elif msg.author.id == MARŤA:
         if marťa_msg_sendone:
-            await msg.channel.send("Zdravím!")
+            await msg.channel.send("Zdravím!", delete_after=DELETE_TIME)
             marťa_msg_sendone = False
 
     if msg.content.startswith("-nick"):
         if len(msg.content.split()) < 3:
-            await msg.channel.send("Příkaz se zadává ve formátu: '-nick @cíl přezdívka'")
+            await msg.channel.send("Příkaz se zadává ve formátu: '-nick @cíl přezdívka'", delete_after=DELETE_TIME)
             return
         args = msg.content.split(" ", 2)
         if not (args[1].startswith("<@") and args[1].endswith(">") and msg.mentions):
-            await msg.channel.send("Druhý argument musí být uživatel, jehož jméno měníš.")
+            await msg.channel.send("Druhý argument musí být uživatel, jehož jméno měníš.", delete_after=DELETE_TIME)
             return
         target = msg.mentions[0]
         nick = args[2]
         nick = nick.strip()
         if len(nick) > 32:
-            await msg.channel.send("Přezdívka může mít maximálně 32 charakterů")
+            await msg.channel.send("Přezdívka může mít maximálně 32 charakterů", delete_after=DELETE_TIME)
             return
         if nick.lower() == "none" or nick.lower() == "off" or nick.lower() == "clear":
             nick = None
@@ -123,15 +123,14 @@ async def on_message(msg: discord.Message):
         return
 
     if msg.content.startswith("-end"):
-        os.system("shutdown /s /t 180")
         await msg.channel.send("Loučím se.")
-        quit()
+        exit("Ukončeno na příkaz {0.author.name}".format(msg))
 
     if msg.content.startswith("-dub"):
         try:
             voice = await msg.author.voice.channel.connect()
         except AttributeError:
-            await msg.channel.send("You have to be connected to a voice channel before using this command")
+            await msg.channel.send("Před použitím tohoto příkazu musíš být připojen do hlasového chatu", delete_after=DELETE_TIME)
             return
         voice.play(discord.FFmpegPCMAudio(DUB))
         counter = 0
