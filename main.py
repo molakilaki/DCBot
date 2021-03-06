@@ -5,10 +5,8 @@ import requests
 from json import loads
 from sys import exit
 import logging
-import teachers
 
 TOKEN = "ODAxODg5MTExNzQ0NzA4NjQx.YAnPbg.I9PjsuAQF1Tj4HkXbWtKHQ7zmts"
-DUB = "./TakZdar.mp3"
 DELETE_TIME = 20.0
 
 VOJTA = 525816801133723658

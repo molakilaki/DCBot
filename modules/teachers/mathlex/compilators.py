@@ -1,20 +1,15 @@
-# © vidmartin 2021
-
-from __future__ import annotations
-
-from typing import *
 import math
 
-from .mathlex import *
-from .nodes import *
+from modules.teachers.mathlex.mathlex import *
+from modules.teachers.mathlex.nodes import *
 
 def compileCompare(tokens: List[Token]) -> Optional[Node]: 
     for i in range(len(tokens)):
         i = len(tokens) - 1 - i
         token = tokens[i]
         if token.kind == "operator" and token.data in ("<", ">", "<=", ">=", "!=", "==", "=", "/=", "=/="):
-            left = compileNode(tokens[:i])
-            right = compileNode(tokens[i+1:])
+            left = compile_node(tokens[:i])
+            right = compile_node(tokens[i + 1:])
             if left == None or right == None:
                 return None
 
@@ -36,8 +31,8 @@ def compilePlusMinus(tokens: List[Token]) -> Optional[Node]:
         i = len(tokens) - 1 - i # odzadu
         token = tokens[i]
         if token.kind == "operator" and token.data in ("+", "-"):
-            left = compileNode(tokens[:i])
-            right = compileNode(tokens[i+1:])
+            left = compile_node(tokens[:i])
+            right = compile_node(tokens[i + 1:])
             if left == None or right == None:
                 return None
 
@@ -51,8 +46,8 @@ def compileMultiplyDivide(tokens: List[Token]) -> Optional[Node]:
         i = len(tokens) - 1 - i # odzadu
         token = tokens[i]
         if token.kind == "operator" and token.data in ("*", "/"):
-            left = compileNode(tokens[:i])
-            right = compileNode(tokens[i+1:])
+            left = compile_node(tokens[:i])
+            right = compile_node(tokens[i + 1:])
             if left == None or right == None:
                 return None
 
@@ -66,8 +61,8 @@ def compilePower(tokens: List[Token]) -> Optional[Node]:
         i = len(tokens) - 1 - i # odzadu
         token = tokens[i]
         if token.kind == "operator" and token.data == "^":
-            left = compileNode(tokens[:i])
-            right = compileNode(tokens[i+1:])
+            left = compile_node(tokens[:i])
+            right = compile_node(tokens[i + 1:])
             return BinaryNode(left, right, lambda a, b,: a ** b)
 
 UNARY_FUNCTIONS = {
@@ -84,17 +79,18 @@ UNARY_FUNCTIONS = {
 
 def compileFunction(tokens: List[Token]) -> Optional[Node]:
     if len(tokens) == 2 and tokens[0].kind == "word" and tokens[0].data.lower() in UNARY_FUNCTIONS and tokens[1].kind == "subexpr":
-        return UnaryNode(compileNode(tokens[1].data), UNARY_FUNCTIONS[tokens[0].data.lower()])
+        return UnaryNode(compile_node(tokens[1].data), UNARY_FUNCTIONS[tokens[0].data.lower()])
 
 def compileSubexpression(tokens: List[Token]) -> Optional[Node]:
     if len(tokens) == 1 and tokens[0].kind == "subexpr":
-        return compileNode(tokens[0].data)
+        return compile_node(tokens[0].data)
 
 def compileConstant(tokens: List[Token]) -> Optional[Node]:
     if len(tokens) == 1 and tokens[0].kind == "number":
         return ConstantNode(tokens[0].data)
     if len(tokens) == 2 and tokens[0].kind == "operator" and tokens[0].data in ("+", "-") and tokens[1].kind == "number":
         return ConstantNode(tokens[1].data * (-1 if tokens[0].data == "-" else 1))
+
 
 COMPILE_ORDER_CALCULATOR = [
     compilePlusMinus,
@@ -115,8 +111,10 @@ COMPILE_ORDER_WITH_COMPARE = [
     compileConstant
 ]
 
-def compileNode(tokens: List[Token], compileOrder: List[Callable[[List[Token]], Optional[Node]]] = None) -> Optional[Node]:
-    if compileOrder == None:
+
+def compile_node(tokens: List[Token], compileOrder: List[Callable[[List[Token]], Optional[Node]]] = None) -> Optional[Node]:
+
+    if not compileOrder:
         compileOrder = COMPILE_ORDER_CALCULATOR
 
     for compilator in compileOrder:

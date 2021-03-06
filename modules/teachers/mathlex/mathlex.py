@@ -1,17 +1,9 @@
-# © vidmartin 2021
-
-# Convert mathematical expressions into tokens and then into nodes, which can be evaluated
-
-from __future__ import annotations
-
 from typing import *
 import re
 
-from . import nodes
-from . import compilators
 
 class Token:
-    def __init__(self, kind: str, data: Union[str, List[Token]]):
+    def __init__(self, kind: str, data: Union[str, list]):
         self.kind = kind.lower()
         self.data = data
 
@@ -24,11 +16,13 @@ class Token:
 
         return "%s(%s)" % (self.kind, self.data)
 
+
 class TokenDefinition:
     def __init__(self, kind: str, pattern: str, converter: Optional[Callable[[str], float]] = None):
         self.kind = kind.lower()
         self.pattern = pattern
         self.converter = converter
+
 
 TOKEN_DEFINITIONS: List[TokenDefinition] = [
     TokenDefinition("word", "[a-zA-Z]+"),
@@ -79,4 +73,3 @@ def tokenize(expression: str) -> List[Token]:
             break
     
     return tokens
-

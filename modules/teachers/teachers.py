@@ -3,8 +3,26 @@ import re
 import random
 import typing
 import asyncio
+from modules.teachers.mathlex import mathlex, compilators, nodes
 
-from mathlex import mathlex, compilators, nodes
+
+async def proc_webhooks(channel: discord.TextChannel):
+    # V případě že se v kanále nenachází žádný webhook, vytvoří si jeden
+    try:
+        hooks = await channel.webhooks()
+    except discord.Forbidden:
+        await channel.send("Zkontroluj moje práva\nPotřebuji Manage Webhooks abych mohl pokračovat")
+        return None
+    hooks = [hook for hook in hooks if hook.type != discord.WebhookType.channel_follower]
+
+    if not hooks:
+        try:
+            hooks.append(await channel.create_webhook(name="webhook", reason="Vytvořil si potřebný webhook"))
+        except discord.HTTPException:
+            print("Chyba při připojování")
+            return None
+    return hooks
+
 
 class Teacher:
     async def sendMessage(self, message: str, webhook: discord.Webhook):
@@ -157,22 +175,24 @@ class Monika(Teacher):
             self.replenishingTask.cancel()
         self.replenishingTask = asyncio.create_task(self.replenishEnergyAfter10s())
 
-    async def handleMessage(self, message: discord.Message, webhooks: list):
+    async def handleMessage(self, message: discord.Message):
         if self.isProcessingMessage:
             return
         self.isProcessingMessage = True
 
         try:
-            await self._handleMessage(message, webhooks)
+            await self._handleMessage(message)
         finally:
             self.isProcessingMessage = False
 
-    async def _handleMessage(self, message: discord.Message, webhooks: list):
+    async def _handleMessage(self, message: discord.Message):
         m = Monika.mathRegex.search(message.content)
-        if webhooks and m and re.search(r"\d", m.group(0)) and (re.search(r"[a-zA-Z]", m.group(0)) or re.search(r"[+\-*\/=!^<>]", m.group(0))):
-            webhook = webhooks[0]
+        if m and re.search(r"\d", m.group(0)) and (re.search(r"[a-zA-Z]", m.group(0)) or re.search(r"[+\-*\/=!^<>]", m.group(0))):
 
-            await asyncio.sleep(random.random() * 2 + 2)
+            webhook = await proc_webhooks(message.channel)
+            webhook = webhook[0]
+
+            await asyncio.sleep(1)
 
             if self.energy <= 0:
                 await self.sendMessage(random.choice(Monika.MSG_TIRED), webhook)
@@ -189,7 +209,7 @@ class Monika(Teacher):
                     await self.sendMessage("2 + 2 = 5, jak pravil strýc Štalin!", webhook)
                     return
 
-                node = compilators.compileNode(tokens, compilators.COMPILE_ORDER_WITH_COMPARE)
+                node = compilators.compile_node(tokens, compilators.COMPILE_ORDER_WITH_COMPARE)
 
                 if not node:
                     return
