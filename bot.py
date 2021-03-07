@@ -23,7 +23,7 @@ async def change_nick(msg: discord.Message):
         return
     args = msg.content.split(" ", 2)
     if not (args[1].startswith("<@") and args[1].endswith(">") and msg.mentions):
-        await msg.channel.send("Druhý argument musí být uživatel, jehož jméno měníš.", delete_after=DELETE_TIME)
+        await msg.channel.send("Příkaz se zadává ve formátu: '-nick @cíl přezdívka'", delete_after=DELETE_TIME)
         return
     target = msg.mentions[0]
     nick = args[2]
@@ -51,10 +51,10 @@ async def among_get_active(channel):
     info = r.get(url)
     if info.status_code != 200:
         await channel.send("Chyba při získávání informací od Steamu")
+        return
     info = loads(info.text)
     stats = info["response"]
-    response = "Among Us právě hraje {0} hráčů".format(stats["player_count"])
-    await channel.send(response)
+    await channel.send("Among Us právě hraje {0} hráčů".format(stats["player_count"]))
     return
 
 
@@ -96,9 +96,11 @@ class Bot(discord.Client):
 
         if message.content.startswith("!exit!") and message.author == self.admin:
             await message.channel.send("Jdu spát")
-            exit("Exited via command on discord")
+            await self.close()
+            exit(0)
 
         await self.Monika.handleMessage(message)
+        await self.Player.handle_message(message)
 
 
 Bot().run(TOKEN)

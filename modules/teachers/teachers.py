@@ -3,7 +3,7 @@ import re
 import random
 import typing
 import asyncio
-from modules.teachers.mathlex import mathlex, compilators, nodes
+from modules.teachers.mathlex import mathlex, compilators
 
 
 async def proc_webhooks(channel: discord.TextChannel):
@@ -27,16 +27,18 @@ async def proc_webhooks(channel: discord.TextChannel):
 class Teacher:
     async def sendMessage(self, message: str, webhook: discord.Webhook):
         await webhook.send(message, username=self.username, avatar_url=self.avatar_url)
-    
+
     def handleMessage(self, message: discord.Message):
         pass
 
+
 def doEasterEggStalin(tokens: typing.List[mathlex.Token]):
-    if (random.random() <= 0.1 and len(tokens) == 3 and 
-        tokens[0].kind == "number" and tokens[0].data == 2 and 
-        tokens[1].kind == "operator" and tokens[1].data == "+" and 
-        tokens[2].kind == "number" and tokens[2].data == 2):
+    if (random.random() <= 0.1 and len(tokens) == 3 and
+            tokens[0].kind == "number" and tokens[0].data == 2 and
+            tokens[1].kind == "operator" and tokens[1].data == "+" and
+            tokens[2].kind == "number" and tokens[2].data == 2):
         return True
+
 
 class Monika(Teacher):
     mathRegex = re.compile(r"(([+\-*\/^\d=!><]+|[a-zA-Z]{0,5}\(.*\d.*\))\s*)+")
@@ -52,7 +54,7 @@ class Monika(Teacher):
         "Mně to vyšlo %s, souhlas?",
         "Výsledek má být %s.",
         "Je to %s :slight_smile:"
-    ]    
+    ]
     MSG_CALCULATE_CORRECT = [
         "Teda pardon, %s...",
         "Tak mám to dobře nebo ne? Nemám. Správně to je %s.",
@@ -122,7 +124,7 @@ class Monika(Teacher):
         "Teda vy jste mamlas.(30%)",
         ":woman_facepalming: já se z vás zblázním!",
         "Kéž bych dokázala být tak blbá, jako jste vy!(60%)",
-        "A nejste vy náhodou dement?(80%)",   
+        "A nejste vy náhodou dement?(80%)",
         "Vy už máte taky dost, viďte?",
         "Vaše hloupost prohlubuje moji depresi.(50%)",
         "Dám vám radu: zkuste použít mozek.",
@@ -155,16 +157,15 @@ class Monika(Teacher):
 
     def __init__(self):
         self.username = "Monika Barešová"
-        self.avatar_url = "https://scontent-prg1-1.xx.fbcdn.net/v/t1.0-9/101985663_3227495353947932_6200059714416410624_o.jpg?_nc_cat=102&ccb=2&_nc_sid=09cbfe&_nc_ohc=1bMHrkYViMMAX_vEkC0&_nc_ht=scontent-prg1-1.xx&oh=075d74b112e02a94a166926e7feb9fec&oe=60322A6B"
+        self.avatar_url = "https://cdn.discordapp.com/avatars/803045919666470942/0186999390d7be191e7de8e078efce51.png?size=128"
         self.isProcessingMessage = False
         self.energy = 100
         self.replenishingTask: typing.Optional[asyncio.Task] = None
 
-    async def replenishEnergyAfter10s(self):        
+    async def replenishEnergyAfter10s(self):
         try:
             await asyncio.sleep(10)
             self.energy = 100
-            print("Monča se vyspala")
         except asyncio.CancelledError:
             pass
 
@@ -187,7 +188,8 @@ class Monika(Teacher):
 
     async def _handleMessage(self, message: discord.Message):
         m = Monika.mathRegex.search(message.content)
-        if m and re.search(r"\d", m.group(0)) and (re.search(r"[a-zA-Z]", m.group(0)) or re.search(r"[+\-*\/=!^<>]", m.group(0))):
+        if m and re.search(r"\d", m.group(0)) and (
+                re.search(r"[a-zA-Z]", m.group(0)) or re.search(r"[+\-*\/=!^<>]", m.group(0))):
 
             webhook = await proc_webhooks(message.channel)
             webhook = webhook[0]
@@ -232,10 +234,11 @@ class Monika(Teacher):
                         sorry_chance = 0
 
                         # u některých MSG_CHECK_NO zpráv je na konci uvedena šance, že se za ně Monča omluví.
-                        percent_match = re.search(r"\((\d+)%\)$", msg) 
+                        percent_match = re.search(r"\((\d+)%\)$", msg)
                         if percent_match:
-                            sorry_chance = float(percent_match.group(1)) / 100 # nastavit šanci na omluvu
-                            msg = msg[:-len(percent_match.group(0))] # zkrátit message o to, co odpovídá regexu (na konci)
+                            sorry_chance = float(percent_match.group(1)) / 100  # nastavit šanci na omluvu
+                            msg = msg[
+                                  :-len(percent_match.group(0))]  # zkrátit message o to, co odpovídá regexu (na konci)
 
                         await self.sendMessage(msg, webhook)
 
@@ -255,10 +258,10 @@ class Monika(Teacher):
 
                     # pokud se monča splete, vygenerovat náhodné číslo od -10 do 10 kromě 0, které k výsledku přičtem
                     mistake = 0
-                    if random.random() < Monika.MISTAKE_CHANCE:                        
+                    if random.random() < Monika.MISTAKE_CHANCE:
                         while mistake == 0:
                             mistake = random.randint(-10, 10)
-                    
+
                     # první pokus
                     firstTryWhole = m.group(0) + " = " + str(result + mistake)
                     await self.sendMessage(random.choice(Monika.MSG_CALCULATE_TRY) % firstTryWhole, webhook)
