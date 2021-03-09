@@ -25,7 +25,7 @@ class Voter:
             self.voting_now = True
             return
 
-        if message.content.startswith("vote ") and self.voting_now:
+        if message.content.startswith("vote ") and self.voting_now and not message.author.id == 765547348192526386:
             if message.author.id in self.members_voted:
                 await message.channel.send("Už jsi volil")
                 return
