@@ -6,7 +6,7 @@ from modules.teachers.teachers import Monika
 from modules.music.player import Player
 from modules.Volby.Volby import Voter
 
-TOKEN = "ODAxODg5MTExNzQ0NzA4NjQx.YAnPbg.I9PjsuAQF1Tj4HkXbWtKHQ7zmts"
+TOKEN = "ODE4ODk5MjkxMDQ4Mzc4NDIx.YEexZQ.KnLZNtYCxu-pwBQzqWAx7oRGoQo"
 debug = False
 
 DELETE_TIME = 20.0
