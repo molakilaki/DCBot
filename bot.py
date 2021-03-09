@@ -4,6 +4,7 @@ import requests as r
 from json import loads
 from modules.teachers.teachers import Monika
 from modules.music.player import Player
+from modules.Volby.Volby import Voter
 
 TOKEN = "ODAxODg5MTExNzQ0NzA4NjQx.YAnPbg.I9PjsuAQF1Tj4HkXbWtKHQ7zmts"
 debug = True
@@ -12,7 +13,7 @@ DELETE_TIME = 20.0
 ADMIN = 470490558713036801
 
 if debug:
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
 else:
     logging.basicConfig(level=logging.WARNING)
 
@@ -66,20 +67,24 @@ class Bot(discord.Client):
         self.admin = ADMIN
         self.Monika = Monika()
         self.Player = Player()
+        self.Voter = None
         super().__init__(intents=intents, loop=None, **options)
 
     async def on_ready(self):
         logging.info("I'm ready! {0.name}".format(self.user))
 
-        async for guild in self.fetch_guilds(limit=1):
-            self.guild: discord.Guild = guild
+        self.guild: discord.Guild = await self.fetch_guild(498423239119208448)
         logging.info("Connected to {0}".format(self.guild.name))
 
         self.admin: discord.Member = await self.guild.fetch_member(self.admin)
         logging.info("Admin is: {0}".format(self.admin.name))
 
+        role = discord.utils.find(lambda r: r.name == 'Majn', self.guild.roles)
+        channel = self.get_channel(802259577588547604)
+        self.Voter = Voter(role, self.guild, channel, self)
+
     async def on_message(self, message: discord.Message):
-        logging.debug("Registered message", message.content)
+        logging.debug("Registered message {0}".format(message.content))
 
         if message.author == self.user:
             return
@@ -99,6 +104,7 @@ class Bot(discord.Client):
             await self.close()
             exit(0)
 
+        await self.Voter.handle_message(message)
         await self.Monika.handleMessage(message)
         await self.Player.handle_message(message)
 
