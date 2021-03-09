@@ -2,7 +2,6 @@ from modules.music.queue import Queue
 import discord
 import youtube_dl
 import os
-from modules.music.cache import *
 
 PREFIX = "!"
 PLAY = ["play ", "p "]
