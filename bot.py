@@ -7,7 +7,7 @@ from modules.music.player import Player
 from modules.Volby.Volby import Voter
 
 TOKEN = "ODAxODg5MTExNzQ0NzA4NjQx.YAnPbg.I9PjsuAQF1Tj4HkXbWtKHQ7zmts"
-debug = True
+debug = False
 
 DELETE_TIME = 20.0
 ADMIN = 470490558713036801
