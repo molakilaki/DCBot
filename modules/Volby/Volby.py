@@ -36,7 +36,7 @@ class Voter:
             await message.channel.send("Zapsán hlas od {0} pro {1}".format(message.author.name, target))
 
         if message.content.startswith("-results") and self.voting_now:
-            await self.channel.send("Hráč {0} právě ukončil volby".format(message.author.name))
+            await self.channel.send("@here hráč {0} právě ukončil volby".format(message.author.name))
             shuffle(self.members_voted)
             for vote in self.soudce_votes:
                 await self.channel.send("Registrován hlas pro {0}".format(vote))
