@@ -34,6 +34,7 @@ class Voter:
             self.members_voted.append(message.author.id)
             self.soudce_votes.append(target)
             await message.channel.send("Zapsán hlas od {0} pro {1}".format(message.author.name, target))
+            return
 
         if message.content.startswith("-results") and self.voting_now:
             await self.channel.send("@here hráč {0} právě ukončil volby".format(message.author.name))

@@ -2,9 +2,11 @@ import discord
 import logging
 import requests as r
 from json import loads
+from asyncio import sleep
 from modules.teachers.teachers import Monika
 from modules.music.player import Player
 from modules.Volby.Volby import Voter
+import re
 
 TOKEN = "ODE4ODk5MjkxMDQ4Mzc4NDIx.YEexZQ.KnLZNtYCxu-pwBQzqWAx7oRGoQo"
 debug = False
@@ -66,7 +68,7 @@ class Bot(discord.Client):
         self.guild = None
         self.admin = ADMIN
         self.Monika = Monika()
-        self.Player = Player()
+        # self.Player = Player()
         self.Voter = None
         super().__init__(intents=intents, loop=None, **options)
 
@@ -84,9 +86,12 @@ class Bot(discord.Client):
         self.Voter = Voter(role, self.guild, channel, self)
 
     async def on_message(self, message: discord.Message):
-        logging.debug("Registered message {0}".format(message.content))
 
         if message.author == self.user:
+            return
+
+        if message.embeds:
+            await self.check_riptide(message)
             return
 
         if message.content.startswith("-nick"):
@@ -106,7 +111,27 @@ class Bot(discord.Client):
 
         await self.Voter.handle_message(message)
         await self.Monika.handleMessage(message)
-        await self.Player.handle_message(message)
+        # await self.Player.handle_message(message)
+
+    async def check_riptide(self, message):
+        embeds: list[discord.Embed] = message.embeds
+        for embed in embeds:
+            target = embed.description
+            if "JjmMUy49mV8" in target:
+                fallback_channel = message.author.voice.channel
+                fuj = self.get_channel(820089925440766026)
+                pattern = re.split("@|>", target)
+                traitor: discord.Member = await self.guild.fetch_member(int(pattern[1]))
+                await message.author.move_to(fuj)
+                await traitor.move_to(fuj)
+                await traitor.send(content="Tyhle sračky si pouštěj jinde hajzle")
+                await sleep(210)
+                try:
+                    await message.author.move_to(fallback_channel)
+                except discord.HTTPException:
+                    pass
+                return
+        return
 
 
 Bot().run(TOKEN)
