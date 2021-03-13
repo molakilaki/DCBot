@@ -124,7 +124,7 @@ class Bot(discord.Client):
                 traitor: discord.Member = await self.guild.fetch_member(int(pattern[1]))
                 await message.author.move_to(fuj)
                 await traitor.move_to(fuj)
-                await traitor.send(content="Tyhle sračky si pouštěj jinde hajzle")
+                await traitor.send(content="Tohleto tady neprovozujeme, brčálníku!")
                 await sleep(210)
                 try:
                     await message.author.move_to(fallback_channel)
