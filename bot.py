@@ -14,6 +14,8 @@ debug = False
 DELETE_TIME = 20.0
 ADMIN = 470490558713036801
 
+FILTERED_MUSIC = ["2oAZlBN2CmNieXmJ1bQDYL", "JjmMUy49mV8"]
+
 if debug:
     logging.basicConfig(level=logging.DEBUG)
 else:
@@ -115,22 +117,28 @@ class Bot(discord.Client):
 
     async def check_riptide(self, message):
         embeds: list[discord.Embed] = message.embeds
-        for embed in embeds:
-            target = embed.description
-            if "JjmMUy49mV8" in target:
-                fallback_channel = message.author.voice.channel
-                fuj = self.get_channel(820089925440766026)
-                pattern = re.split("@|>", target)
-                traitor: discord.Member = await self.guild.fetch_member(int(pattern[1]))
-                await message.author.move_to(fuj)
-                await traitor.move_to(fuj)
-                await traitor.send(content="Tohleto tady neprovozujeme, brčálníku!")
-                await sleep(210)
+        for music in FILTERED_MUSIC:
+            for embed in embeds:
+                target = embed.description
                 try:
-                    await message.author.move_to(fallback_channel)
-                except discord.HTTPException:
-                    pass
-                return
+                    if "Now playing" not in embed.title:
+                        return
+                except TypeError:
+                    return
+                if music in target:
+                    fallback_channel = message.author.voice.channel
+                    fuj = self.get_channel(820089925440766026)
+                    pattern = re.split("@|>", target)
+                    traitor: discord.Member = await self.guild.fetch_member(int(pattern[1]))
+                    await message.author.move_to(fuj)
+                    await traitor.move_to(fuj)
+                    await traitor.send(content="Tohleto tady neprovozujeme, brčálníku!")
+                    await sleep(210)
+                    try:
+                        await message.author.move_to(fallback_channel)
+                    except discord.HTTPException:
+                        pass
+                    return
         return
 
 
