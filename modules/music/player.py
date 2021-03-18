@@ -109,7 +109,6 @@ class Player:
             return
 
     async def play(self, msg: discord.Message, queue):
-        print(queue)
         if self.voice_client:
             if not msg.author.voice.channel == self.voice_client.channel:
                 await msg.channel.send("Hraju jinde")
@@ -135,7 +134,7 @@ class Player:
             yt.download([song['url']])
 
         self.queue = queue
-        if self.playing_task:
+        if self.playing_task and not self.playing_task.done():
             await msg.channel.send("added {0} to the queue - link: {1}".format(song['title'], song['url']))
 
         else:
