@@ -19,7 +19,7 @@ FILTERED_MUSIC = ["2oAZlBN2CmNieXmJ1bQDYL", "JjmMUy49mV8"]
 if debug:
     logging.basicConfig(level=logging.DEBUG)
 else:
-    logging.basicConfig(level=logging.WARNING)
+    logging.basicConfig(level=logging.INFO)
 
 
 async def change_nick(msg: discord.Message):
@@ -68,9 +68,9 @@ class Bot(discord.Client):
     def __init__(self, **options):
         intents = discord.Intents.default()
         self.guild = None
-        self.admin = ADMIN
+        self.admin = None
         self.Monika = Monika()
-        # self.Player = Player()
+        self.Player = Player()
         self.Voter = None
         super().__init__(intents=intents, loop=None, **options)
 
@@ -80,7 +80,7 @@ class Bot(discord.Client):
         self.guild: discord.Guild = await self.fetch_guild(498423239119208448)
         logging.info("Connected to {0}".format(self.guild.name))
 
-        self.admin: discord.Member = await self.guild.fetch_member(self.admin)
+        self.admin: discord.Member = await self.guild.fetch_member(ADMIN)
         logging.info("Admin is: {0}".format(self.admin.name))
 
         role = discord.utils.find(lambda r: r.name == 'Majn', self.guild.roles)
@@ -108,12 +108,13 @@ class Bot(discord.Client):
 
         if message.content.startswith("!exit!") and message.author == self.admin:
             await message.channel.send("Jdu spát")
+            await self.Player.voice_client.disconnect()
             await self.close()
             exit(0)
 
         await self.Voter.handle_message(message)
         await self.Monika.handleMessage(message)
-        # await self.Player.handle_message(message)
+        await self.Player.handle_message(message)
 
     async def check_riptide(self, message):
         embeds: list[discord.Embed] = message.embeds
