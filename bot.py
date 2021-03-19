@@ -83,7 +83,7 @@ class Bot(discord.Client):
         self.admin: discord.Member = await self.guild.fetch_member(ADMIN)
         logging.info("Admin is: {0}".format(self.admin.name))
 
-        role = discord.utils.find(lambda r: r.name == 'Majn', self.guild.roles)
+        role = self.guild.get_role(802247704423825478)
         channel = self.get_channel(802259577588547604)
         self.Voter = Voter(role, self.guild, channel, self)
 
