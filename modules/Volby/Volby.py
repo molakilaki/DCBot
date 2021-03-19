@@ -14,7 +14,6 @@ class Voter:
         self.voting_now = False
         self.members_voted = []
         self.soudce_votes = []
-        self.filtered_votes = []
 
     async def handle_message(self, message: discord.Message):
 
