@@ -2,17 +2,16 @@ import discord
 import logging
 import requests as r
 from json import loads
-from asyncio import sleep
 from modules.teachers.teachers import Monika
 from modules.music.player import Player
 from modules.Volby.Volby import Voter
-import re
 
 TOKEN = "ODE4ODk5MjkxMDQ4Mzc4NDIx.YEexZQ.KnLZNtYCxu-pwBQzqWAx7oRGoQo"
 debug = False
 
 DELETE_TIME = 20.0
 ADMIN = 470490558713036801
+guild_ids = [498423239119208448]
 
 FILTERED_MUSIC = ["2oAZlBN2CmNieXmJ1bQDYL", "JjmMUy49mV8"]
 
@@ -92,10 +91,6 @@ class Bot(discord.Client):
         if message.author == self.user:
             return
 
-        if message.embeds:
-            await self.check_riptide(message)
-            return
-
         if message.content.startswith("-nick"):
             logging.debug("Passed onto nickname changer")
             await change_nick(message)
@@ -116,31 +111,8 @@ class Bot(discord.Client):
         await self.Monika.handleMessage(message)
         await self.Player.handle_message(message)
 
-    async def check_riptide(self, message):
-        embeds: list[discord.Embed] = message.embeds
-        for music in FILTERED_MUSIC:
-            for embed in embeds:
-                target = embed.description
-                try:
-                    if "Now playing" not in embed.title:
-                        return
-                except TypeError:
-                    return
-                if music in target:
-                    fallback_channel = message.author.voice.channel
-                    fuj = self.get_channel(820089925440766026)
-                    pattern = re.split("@|>", target)
-                    traitor: discord.Member = await self.guild.fetch_member(int(pattern[1]))
-                    await message.author.move_to(fuj)
-                    await traitor.move_to(fuj)
-                    await traitor.send(content="Tohleto tady neprovozujeme, brčálníku!")
-                    await sleep(210)
-                    try:
-                        await message.author.move_to(fallback_channel)
-                    except discord.HTTPException:
-                        pass
-                    return
         return
 
 
-Bot().run(TOKEN)
+bot = Bot()
+bot.run(TOKEN)

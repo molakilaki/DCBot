@@ -21,8 +21,7 @@ class Voter:
             if self.voting_now:
                 await message.channel.send("Volby už probíhají")
                 return
-            await self.channel.send(
-                "@here byly vyhlášeny volby, hlasujte příkazem vote 'hráč' zaslaným mně do soukromé zprávy")
+            await self.channel.send("@here byly vyhlášeny volby, hlasujte příkazem vote 'hráč' zaslaným mně do soukromé zprávy")
             await self.channel.send("Volby vyhlásil {0}".format(message.author.name))
             self.voting_now = True
             return

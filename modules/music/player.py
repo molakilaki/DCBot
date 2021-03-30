@@ -13,6 +13,7 @@ CLEAR = ["clear", "clr"]
 SHUFFLE = ["shuffle", "mix"]
 LOOP = ["loop", "repeat"]
 PAUSE = ["pause"]
+SKIP = ["s", "skip", "n", "next"]
 
 ytdl_format_options = {
     'outtmpl': 'downloads/%(id)s.mp3',
@@ -73,6 +74,7 @@ class Player:
         logging.info("Loaded player")
         self.queue = []
         self.playing_task = None
+        self.i = 0
 
     def remove_song(self, song: int):
         self.queue.remove(song)
@@ -93,6 +95,7 @@ class Player:
         if check_aliases(message.content, CLEAR) and message.author.voice.channel == self.voice_client.channel:
             self.queue.clear()
             self.voice_client.stop()
+            self.playing_task.cancel()
             await message.channel.send("Cleared queue")
             return
 
@@ -106,6 +109,14 @@ class Player:
 
         if check_aliases(message.content, PAUSE):
             await self.pause(message)
+            return
+
+        if check_aliases(message.content, SKIP):
+            if self.playing_task:
+                self.voice_client.stop()
+                self.playing_task.cancel()
+                self.i += 1
+                self.playing_task = asyncio.create_task(self.lets_play_it())
             return
 
     async def play(self, msg: discord.Message, queue):
@@ -181,14 +192,16 @@ class Player:
                 await msg.channel.send(song)
 
     async def lets_play_it(self):
-        i = 0
-        while i < len(self.queue):
-            now_playing = self.queue[i]
+        while self.i < len(self.queue):
+            now_playing = self.queue[self.i]
             name = "./downloads/" + now_playing["id"] + ".mp3"
             await now_playing['channel'].send("Teď pojede {0}".format(now_playing['title']))
             self.voice_client.play(discord.FFmpegPCMAudio(name), after=lambda e: print('Player error: %s' % e) if e else None)
-            await asyncio.sleep(int(now_playing['duration']))
-            i += 1
+            try:
+                await asyncio.sleep(int(now_playing['duration']))
+            except asyncio.CancelledError:
+                return
+            self.i += 1
         self.queue.clear()
+        self.i = 0
         return
-
