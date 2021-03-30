@@ -130,12 +130,20 @@ class Player:
         else:
             self.voice_client: discord.VoiceClient = await msg.author.voice.channel.connect()
 
+        if self.voice_client.is_paused:
+            self.voice_client.resume()
+            return
+
         args = msg.content.split(" ", 1)
         data = await get_info(args[1])
         if 'entries' in data:
             data = data["entries"][0]
 
-        song = {'title': data['title'], 'url': data['webpage_url'], 'id': data['id'], 'channel': msg.channel, 'duration': data['duration']}
+        song = {'title': data['title'],
+                'url': data['webpage_url'],
+                'id': data['id'],
+                'message': msg,
+                'duration': data['duration']}
 
         queue.append(song)
         name = song['id'] + ".mp3"
@@ -188,14 +196,21 @@ class Player:
 
     async def print_queue(self, msg: discord.Message):
         if self.queue:
-            for song in self.queue:
-                await msg.channel.send(song)
+            embed = discord.Embed(title="Fronta písniček")
+            now_playing = "[" + self.queue[self.i]["title"] + "](" + self.queue[self.i]["url"] + ") | `zadal " + self.queue[self.i]["message"].author.name + "`"
+            embed.add_field(name="__Právě hraje:__", value=now_playing, inline=False)
+
+            if len(self.queue) > self.i:
+                next_playing = "`1.` [" + self.queue[self.i + 1]["title"] + "](" + self.queue[self.i]["url"] + ") | `zadal " + self.queue[self.i + 1]["message"].author.name + "`"
+                embed.add_field(name="__Následuje:__", value=next_playing, inline=False)
+
+            await msg.channel.send(embed=embed)
 
     async def lets_play_it(self):
         while self.i < len(self.queue):
             now_playing = self.queue[self.i]
             name = "./downloads/" + now_playing["id"] + ".mp3"
-            await now_playing['channel'].send("Teď pojede {0}".format(now_playing['title']))
+            await now_playing['message'].channel.send("Teď pojede {0}".format(now_playing['title']))
             self.voice_client.play(discord.FFmpegPCMAudio(name), after=lambda e: print('Player error: %s' % e) if e else None)
             try:
                 await asyncio.sleep(int(now_playing['duration']))
@@ -204,4 +219,5 @@ class Player:
             self.i += 1
         self.queue.clear()
         self.i = 0
+        self.voice_client.stop()
         return
