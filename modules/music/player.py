@@ -67,6 +67,12 @@ async def get_info(arg):
     return ytdl.extract_info(arg, download=False)
 
 
+async def download_song(url: str):
+    yt = youtube_dl.YoutubeDL(ytdl_format_options)
+    yt.download([url])
+    return
+
+
 class Player:
     def __init__(self):
         self.loop = False
@@ -77,11 +83,11 @@ class Player:
         self.i = 0
 
     def remove_song(self, song: int):
-        self.queue.remove(song)
+        self.queue.remove(self.i + song)
 
     async def handle_message(self, message: discord.Message):
         if check_aliases(message.content, PLAY):
-            await self.play(message, self.queue)
+            await self.play(message)
             return
 
         if check_aliases(message.content, DISCONNECT) and self.voice_client:
@@ -119,7 +125,7 @@ class Player:
                 self.playing_task = asyncio.create_task(self.lets_play_it())
             return
 
-    async def play(self, msg: discord.Message, queue):
+    async def play(self, msg: discord.Message):
         if self.voice_client:
             if not msg.author.voice.channel == self.voice_client.channel:
                 await msg.channel.send("Hraju jinde")
@@ -129,10 +135,6 @@ class Player:
             return
         else:
             self.voice_client: discord.VoiceClient = await msg.author.voice.channel.connect()
-
-        if self.voice_client.is_paused:
-            self.voice_client.resume()
-            return
 
         args = msg.content.split(" ", 1)
         data = await get_info(args[1])
@@ -145,14 +147,11 @@ class Player:
                 'message': msg,
                 'duration': data['duration']}
 
-        queue.append(song)
+        self.queue.append(song)
         name = song['id'] + ".mp3"
         if name not in os.listdir("./downloads/"):
+            await download_song(song['url'])
 
-            yt = youtube_dl.YoutubeDL(ytdl_format_options)
-            yt.download([song['url']])
-
-        self.queue = queue
         if self.playing_task and not self.playing_task.done():
             await msg.channel.send("added {0} to the queue - link: {1}".format(song['title'], song['url']))
 
@@ -199,12 +198,24 @@ class Player:
             embed = discord.Embed(title="Fronta písniček")
             now_playing = "[" + self.queue[self.i]["title"] + "](" + self.queue[self.i]["url"] + ") | `zadal " + self.queue[self.i]["message"].author.name + "`"
             embed.add_field(name="__Právě hraje:__", value=now_playing, inline=False)
-
+            i = 0
             if len(self.queue) > self.i:
-                next_playing = "`1.` [" + self.queue[self.i + 1]["title"] + "](" + self.queue[self.i]["url"] + ") | `zadal " + self.queue[self.i + 1]["message"].author.name + "`"
-                embed.add_field(name="__Následuje:__", value=next_playing, inline=False)
+                next_playing = "`1.` [" + self.queue[self.i + 1]["title"] + "](" + self.queue[self.i + 1]["url"] + ") | `zadal " + self.queue[self.i + 1]["message"].author.name + "`\n\n"
+                i = 2
+                for index in range(self.i + 2, len(self.queue)):
+                    if i == 0:
+                        embed = discord.Embed(title="Pokračování fronty písniček")
+                    next_playing = next_playing + "`" + str(index - self.i) + ".` [" + self.queue[index]["title"] + "](" + self.queue[index]["url"] + ") | `zadal " + self.queue[index]["message"].author.name + "`\n\n"
+                    i += 1
+                    if i % 10 == 0:
+                        i = 0
+                        embed.add_field(name="Následují", value=next_playing, inline=False)
+                        await msg.channel.send(embed=embed)
+                        next_playing = ""
 
-            await msg.channel.send(embed=embed)
+            if i % 10 != 0:
+                embed.add_field(name="__Následují:__", value=next_playing, inline=False)
+                await msg.channel.send(embed=embed)
 
     async def lets_play_it(self):
         while self.i < len(self.queue):
