@@ -38,16 +38,13 @@ ytdl_format_options = {
 stim = {
     'audioquality': 5,
     'format': 'bestaudio',
-    'outtmpl': '{}',
     'restrictfilenames': True,
     'flatplaylist': True,
     'nocheckcertificate': True,
-    'ignoreerrors': True,
+    'ignoreerrors': False,
     'logtostderr': False,
-    "extractaudio": True,
-    "audioformat": "opus",
     'quiet': True,
-    'no_warnings': True,
+    'no_warnings': False,
     'default_search': 'auto',
     # bind to ipv4 since ipv6 addresses cause issues sometimes
     'source_address': '0.0.0.0'
@@ -62,14 +59,15 @@ def check_aliases(message: discord.Message.content, aliases: list):
     return False
 
 
-async def get_info(arg):
-    ytdl = youtube_dl.YoutubeDL(stim)
-    return ytdl.extract_info(arg, download=False)
+def get_info(arg):
+    with youtube_dl.YoutubeDL(stim) as ydl:
+        info = ydl.extract_info(arg, download=False)
+    return info
 
 
-async def download_song(url: str):
-    yt = youtube_dl.YoutubeDL(ytdl_format_options)
-    yt.download([url])
+def download_song(url: str):
+    with youtube_dl.YoutubeDL(ytdl_format_options) as yt:
+        yt.download([url])
     return
 
 
@@ -137,8 +135,9 @@ class Player:
             self.voice_client: discord.VoiceClient = await msg.author.voice.channel.connect()
 
         args = msg.content.split(" ", 1)
-        data = await get_info(args[1])
-        if 'entries' in data:
+        data = get_info(args[1])
+        await asyncio.sleep(2)
+        if data['entries']:
             data = data["entries"][0]
 
         song = {'title': data['title'],
@@ -150,7 +149,7 @@ class Player:
         self.queue.append(song)
         name = song['id'] + ".mp3"
         if name not in os.listdir("./downloads/"):
-            await download_song(song['url'])
+            download_song(song['url'])
 
         if self.playing_task and not self.playing_task.done():
             await msg.channel.send("added {0} to the queue - link: {1}".format(song['title'], song['url']))
@@ -194,28 +193,28 @@ class Player:
         return
 
     async def print_queue(self, msg: discord.Message):
-        if self.queue:
+        if len(self.queue) > self.i:
             embed = discord.Embed(title="Fronta písniček")
             now_playing = "[" + self.queue[self.i]["title"] + "](" + self.queue[self.i]["url"] + ") | `zadal " + self.queue[self.i]["message"].author.name + "`"
             embed.add_field(name="__Právě hraje:__", value=now_playing, inline=False)
-            i = 0
-            if len(self.queue) > self.i:
+            if len(self.queue) > self.i + 1:
                 next_playing = "`1.` [" + self.queue[self.i + 1]["title"] + "](" + self.queue[self.i + 1]["url"] + ") | `zadal " + self.queue[self.i + 1]["message"].author.name + "`\n\n"
                 i = 2
                 for index in range(self.i + 2, len(self.queue)):
-                    if i == 0:
-                        embed = discord.Embed(title="Pokračování fronty písniček")
                     next_playing = next_playing + "`" + str(index - self.i) + ".` [" + self.queue[index]["title"] + "](" + self.queue[index]["url"] + ") | `zadal " + self.queue[index]["message"].author.name + "`\n\n"
                     i += 1
                     if i % 10 == 0:
-                        i = 0
-                        embed.add_field(name="Následují", value=next_playing, inline=False)
+                        embed.add_field(name="__Následují:__", value=next_playing, inline=False)
                         await msg.channel.send(embed=embed)
                         next_playing = ""
+                        embed = discord.Embed(title="Pokračování fronty písniček")
 
-            if i % 10 != 0:
-                embed.add_field(name="__Následují:__", value=next_playing, inline=False)
+                if i % 10 != 0:
+                    embed.add_field(name="__Následují:__", value=next_playing, inline=False)
+            if embed.fields:
                 await msg.channel.send(embed=embed)
+        else:
+            await msg.channel.send("Fronta je prázdná")
 
     async def lets_play_it(self):
         while self.i < len(self.queue):
