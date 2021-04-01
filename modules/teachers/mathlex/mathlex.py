@@ -34,7 +34,7 @@ TOKEN_DEFINITIONS: List[TokenDefinition] = [
 def tokenize(expression: str) -> List[Token]:
     """převede řetězec na seznam tokenů"""
 
-    tokens = list()
+    tokens = []
 
     while expression:
         # odstranit mezery ze začátku řetězce

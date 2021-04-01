@@ -65,7 +65,7 @@ async def among_get_active(channel):
 class Bot(discord.Client):
 
     def __init__(self, **options):
-        intents = discord.Intents.default()
+        intents = discord.Intents.all()
         self.guild = None
         self.admin = None
         self.Monika = Monika()
@@ -89,6 +89,14 @@ class Bot(discord.Client):
     async def on_message(self, message: discord.Message):
 
         if message.author == self.user:
+            return
+
+        role = discord.utils.find(lambda r: r.id == 802247704423825478, message.guild.roles)
+        if message.author.id == 595296641313931264 and message.author.status == discord.Status.offline and role in message.author.roles:
+            await message.author.remove_roles(role, reason="Offline")
+            return
+        elif message.author.id == 595296641313931264 and message.author.status == discord.Status.online and role not in message.author.roles:
+            await message.author.add_roles(role, reason="Online")
             return
 
         if message.content.startswith("-nick"):

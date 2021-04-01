@@ -33,11 +33,7 @@ class Teacher:
 
 
 def doEasterEggStalin(tokens: typing.List[mathlex.Token]):
-    if (random.random() <= 0.1 and len(tokens) == 3 and
-            tokens[0].kind == "number" and tokens[0].data == 2 and
-            tokens[1].kind == "operator" and tokens[1].data == "+" and
-            tokens[2].kind == "number" and tokens[2].data == 2):
-        return True
+    return random.random() <= 0.1 and len(tokens) == 3 and tokens[0].data == 2 and tokens[1].data == "+" and tokens[2].data == 2
 
 
 class Monika(Teacher):

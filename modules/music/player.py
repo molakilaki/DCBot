@@ -26,7 +26,6 @@ ytdl_format_options = {
     'quiet': True,
     'no_warnings': True,
     'default_search': 'auto',
-    # bind to ipv4 since ipv6 addreacses cause issues sometimes
     'source_addreacs': '0.0.0.0',
     'output': r'youtube-dl',
     'postprocessors': [{
@@ -46,7 +45,6 @@ stim = {
     'quiet': True,
     'no_warnings': False,
     'default_search': 'auto',
-    # bind to ipv4 since ipv6 addresses cause issues sometimes
     'source_address': '0.0.0.0'
 }
 
@@ -68,6 +66,7 @@ def get_info(arg):
 def download_song(url: str):
     with youtube_dl.YoutubeDL(ytdl_format_options) as yt:
         yt.download([url])
+        logging.info("Downloading song - " + url)
     return
 
 
@@ -124,17 +123,17 @@ class Player:
             return
 
     async def play(self, msg: discord.Message):
-        if self.voice_client:
-            if not msg.author.voice.channel == self.voice_client.channel:
-                await msg.channel.send("Hraju jinde")
-                return
+        if self.voice_client and not msg.author.voice.channel == self.voice_client.channel:
+            await msg.channel.send("Hraju jinde")
+            return
         elif not msg.author.voice:
             await msg.channel.send("Nejdřív se připoj, pak budu hrát")
             return
-        else:
+        elif not self.voice_client:
             self.voice_client: discord.VoiceClient = await msg.author.voice.channel.connect()
 
         args = msg.content.split(" ", 1)
+        await msg.channel.send(content="**Vyhledávám:** `" + args[1] + "`", embed=None)
         data = get_info(args[1])
         await asyncio.sleep(2)
         if data['entries']:
@@ -148,12 +147,16 @@ class Player:
 
         self.queue.append(song)
         name = song['id'] + ".mp3"
-        if name not in os.listdir("./downloads/"):
-            download_song(song['url'])
+
+        try:
+            if name not in os.listdir("./downloads/"):
+                download_song(song['url'])
+        except FileNotFoundError:
+            os.mkdir("/downloads")
+            logging.warning("Created 'downloads' folder")
 
         if self.playing_task and not self.playing_task.done():
             await msg.channel.send("added {0} to the queue - link: {1}".format(song['title'], song['url']))
-
         else:
             self.playing_task = asyncio.create_task(self.lets_play_it())
         return
