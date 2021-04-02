@@ -114,10 +114,12 @@ class Bot(discord.Client):
             return
 
         if message.content.startswith("!exit!") and message.author == self.admin:
-            await message.channel.send("Jdu spát")
-            await self.Player.voice_client.disconnect()
-            await self.close()
-            exit(0)
+            try:
+                await message.channel.send("Jdu spát")
+                await self.Player.voice_client.disconnect()
+            finally:
+                await self.close()
+                exit(0)
 
         await self.Voter.handle_message(message)
         await self.Monika.handleMessage(message)
