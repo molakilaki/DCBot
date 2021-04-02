@@ -71,6 +71,9 @@ class Bot(discord.Client):
         self.Monika = Monika()
         self.Player = Player()
         self.Voter = None
+        self.active_role = None
+        self.klacek_role = None
+        self.ready = False
         super().__init__(intents=intents, loop=None, **options)
 
     async def on_ready(self):
@@ -86,18 +89,19 @@ class Bot(discord.Client):
         channel = self.get_channel(802259577588547604)
         self.Voter = Voter(role, self.guild, channel, self)
 
+        self.active_role = discord.utils.find(lambda r: r.id == 827625682833637389, self.guild.roles)
+        self.klacek_role = discord.utils.find(lambda r: r.id == 770453970165694545, self.guild.roles)
+        self.ready = True
+
     async def on_message(self, message: discord.Message):
 
         if message.author == self.user:
             return
 
-        role = discord.utils.find(lambda r: r.id == 802247704423825478, message.guild.roles)
-        if message.author.id == 595296641313931264 and message.author.status == discord.Status.offline and role in message.author.roles:
-            await message.author.remove_roles(role, reason="Offline")
+        if not self.ready:
             return
-        elif message.author.id == 595296641313931264 and message.author.status == discord.Status.online and role not in message.author.roles:
-            await message.author.add_roles(role, reason="Online")
-            return
+
+        await self.check_activity(message)
 
         if message.content.startswith("-nick"):
             logging.debug("Passed onto nickname changer")
@@ -121,6 +125,15 @@ class Bot(discord.Client):
 
         return
 
+    async def check_activity(self, message: discord.Message) -> None:
+
+        if self.klacek_role in message.author.roles and message.author.status == discord.Status.offline and self.active_role in message.author.roles:
+            await message.author.remove_roles(self.active_role, reason="Neviditelný status")
+            return
+        elif self.klacek_role in message.author.roles and message.author.status == discord.Status.online and self.active_role not in message.author.roles:
+            await message.author.add_roles(self.active_role, reason="Viditelný status")
+            return
+        return
 
 bot = Bot()
 bot.run(TOKEN)
