@@ -66,54 +66,71 @@ def download_song(url: str):
     return
 
 
-class Queue(asyncio.Queue):
-    pass
+class Queue():
+    def __init__(self):
+        self._queue = []
+
+    def __getitem__(self, item: int):
+        return self._queue[item]
+
+    def __iter__(self):
+        return self._queue.__iter__()
+
+    def __len__(self):
+        return len(self._queue)
+
+    def clear(self):
+        self._queue.clear()
+
+    def shuffle(self):
+        shuffle(self._queue)
+
+    def remove(self, index: int):
+        del self._queue[index]
+
+    def put(self, value: dict):
+        self._queue.append(value)
 
 
 class Player(commands.Cog):
     def __init__(self, bot: commands.Bot):
-        self.loop = False
         self.bot = bot
         logging.info("Loaded player")
-        self.queue = []
-        self.playing_task = None
-        self.i = 0
+        self.database = {}
 
     @commands.command(name="remove", aliases=["rm"])
     @is_music_channel()
     async def remove_song(self, ctx: commands.Context, song: int):
-        song = self.queue.pop(self.i + song)
-        await ctx.send("Odebráno `{0}` z fronty".format(song['title']))
+        songeros = self.database[ctx.guild]["queue"][song]
+        self.database[ctx.guild]["queue"].remove(song)
+        await ctx.send("Odebráno `{0}` z fronty".format(songeros['title']))
 
     @commands.command(name="shuffle")
     @is_music_channel()
     async def shuffle(self, ctx: commands.Context):
-        if len(self.queue) <= self.i:
-            return
-        queue = self.queue[self.i:]
-        self.i = 0
-        shuffle(queue)
-        self.queue = queue
-        await ctx.send("Fronta promíchána")
+        if ctx.author.voice and ctx.author.voice.channel == ctx.guild.voice_channel:
+            self.database[ctx.guild]["queue"].shuffle()
+            await ctx.send("Fronta promíchána")
 
     @commands.command(name="loop")
     @is_music_channel()
     async def do_loop(self, ctx: commands.Context):
-        self.loop = not self.loop
-        if self.loop:
-            await ctx.send("Smyčka zapnuta")
-        else:
-            await ctx.send("Smyčka vypnuta")
-        return
+        if ctx.author.voice and ctx.author.voice.channel == ctx.guild.voice_channel:
+            self.database[ctx.guild]["loop"] = not self.database[ctx.guild]["loop"]
+            if self.database[ctx.guild]["loop"]:
+                await ctx.send("Smyčka zapnuta")
+            else:
+                await ctx.send("Smyčka vypnuta")
+            return
 
     @commands.command(name="skip", aliases=["next", "n"])
     @is_music_channel()
-    async def skip(self, ctx: commands.Context, arg: int = 1):
-        if ctx.guild.voice_client.is_playing:
+    async def skip(self, ctx: commands.Context):
+        if ctx.guild.voice_client.is_playing and ctx.author.voice.channel == ctx.guild.voice_client.channel:
             ctx.guild.voice_client.stop()
-            self.playing_task.cancel()
-            self.i += arg
-            self.playing_task = asyncio.create_task(self.lets_play_it())
+            self.database[ctx.guild]["task"].cancel()
+            self.database[ctx.guild]["loop"] = False
+            self.database[ctx.guild]["task"] = asyncio.create_task(self.lets_play_it(ctx.guild))
         return
 
     @commands.command(name="play", aliases=["p"])
@@ -125,12 +142,17 @@ class Player(commands.Cog):
             return
         elif ctx.guild.voice_client is None:
             await ctx.author.voice.channel.connect()
+            self.database[ctx.guild] = {
+                "queue": Queue(),
+                "loop": False
+            }
         elif ctx.guild.voice_client and not ctx.author.voice.channel == ctx.guild.voice_client.channel:
             await ctx.send("Hraju jinde")
             return
         elif ctx.guild.voice_client.is_paused:
             ctx.guild.voice_client.resume()
-            return
+            if not arg:
+                return
         elif not arg:
             await ctx.send("Zadej název písničky, nebo odkaz")
             return
@@ -149,7 +171,7 @@ class Player(commands.Cog):
 
         if not ctx.guild.voice_client:
             return
-        self.queue.append(song)
+        self.database[ctx.guild]["queue"].put(song)
         name = song['id'] + ".mp3"
 
         try:
@@ -159,10 +181,10 @@ class Player(commands.Cog):
             os.mkdir("/downloads")
             logging.warning("Created 'downloads' folder")
 
-        if self.playing_task and not self.playing_task.done():
+        if "task" in self.database[ctx.guild]:
             await ctx.send("added {0} to the queue - link: {1}".format(song['title'], song['url']))
         else:
-            self.playing_task = asyncio.create_task(self.lets_play_it())
+            self.database[ctx.guild]["task"] = asyncio.create_task(self.lets_play_it(ctx.guild))
         return
 
     @commands.command(name="dc")
@@ -178,7 +200,7 @@ class Player(commands.Cog):
 
         ctx.guild.voice_client.stop()
         await ctx.guild.voice_client.disconnect()
-        self.queue.clear()
+        del self.database[ctx.guild]
         return
 
     @commands.command(name="pause")
@@ -201,19 +223,16 @@ class Player(commands.Cog):
     @commands.guild_only()
     @is_music_channel()
     async def print_queue(self, ctx: commands.Context):
-        if len(self.queue) > self.i:
+        queue = self.database[ctx.guild]["queue"]
+        if len(queue) > 0:
             embed = discord.Embed(title="Fronta písniček")
-            now_playing = "[" + self.queue[self.i]["title"] + "](" + self.queue[self.i]["url"] + ") | `zadal " + \
-                          self.queue[self.i]["message"].author.name + "`"
+            now_playing = "[" + queue[0]["title"] + "](" + queue[0]["url"] + ") | `zadal " + queue[0]["message"].author.name + "`"
             embed.add_field(name="__Právě hraje:__", value=now_playing, inline=False)
-            if len(self.queue) > self.i + 1:
-                next_playing = "`1.` [" + self.queue[self.i + 1]["title"] + "](" + self.queue[self.i + 1][
-                    "url"] + ") | `zadal " + self.queue[self.i + 1]["message"].author.name + "`\n\n"
-                i = 2
-                for index in range(self.i + 2, len(self.queue)):
-                    next_playing = next_playing + "`" + str(index - self.i) + ".` [" + self.queue[index][
-                        "title"] + "](" + self.queue[index]["url"] + ") | `zadal " + self.queue[index][
-                                       "message"].author.name + "`\n\n"
+            if len(queue) > 1:
+                i = 1
+                next_playing = ""
+                for index in range(1, len(queue)):
+                    next_playing = next_playing + "`" + str(index) + ".` [" + queue[index]["title"] + "](" + queue[index]["url"] + ") | `zadal " + queue[index]["message"].author.name + "`\n\n"
                     i += 1
                     if i % 10 == 0:
                         embed.add_field(name="__Následují:__", value=next_playing, inline=False)
@@ -228,20 +247,19 @@ class Player(commands.Cog):
         else:
             await ctx.send("Fronta je prázdná")
 
-    async def lets_play_it(self):
-        now_playing = None
-        while self.i < len(self.queue):
-            now_playing = self.queue[self.i]
+    async def lets_play_it(self, guild: discord.Guild):
+        guild = guild
+        while len(self.database[guild]["queue"]) > 0:
+            now_playing = self.database[guild]["queue"][0]
             name = "./downloads/" + now_playing["id"] + ".mp3"
             await now_playing['message'].send("Teď pojede {0}".format(now_playing['title']))
-            now_playing['message'].guild.voice_client.play(discord.FFmpegPCMAudio(name))
+            guild.voice_client.play(discord.FFmpegPCMAudio(name))
             try:
                 await asyncio.sleep(int(now_playing['duration']))
             except asyncio.CancelledError:
                 return
-            self.i += 1
-        self.queue.clear()
-        self.i = 0
-        if now_playing:
-            now_playing['message'].guild.voice_client.stop()
+            if not self.database[guild]["loop"]:
+                self.database[guild]["queue"].remove(0)
+        guild.voice_client.stop()
+        del self.database[guild]["task"]
         return
