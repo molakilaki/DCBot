@@ -42,6 +42,8 @@ async def nick_error(ctx, error):
         await ctx.send("Uživatel nebyl nalezen")
     elif isinstance(error, commands.MissingRequiredArgument):
         await ctx.send("Příkaz se zadává ve formátu `-nick cíl 'přezdívka'`")
+    elif commands.NoPrivateMessage:
+        await ctx.send("Nelze použít v soukromém chatu")
     else:
         await ctx.send("neočekávaná chyba <@470490558713036801>")
         traceback.print_exc()
@@ -80,16 +82,22 @@ async def on_ready():
 
     admin: discord.User = await bot.fetch_user(bot.owner_id)
     logging.info("Owner is: {0}".format(admin.name))
-    logging.info("---------\nINFO:root:Ready")
+    logging.info("---------")
+    logging.info("°°Ready°°")
 
 
 @bot.event
-@commands.has_role(770453970165694545)
 async def on_member_update(before: discord.Member, after: discord.Member):
-    if before == discord.Status.offline and after.status is not before.status:
-        await after.add_roles(None, reason="Viditelný status")
-    elif
-
+    if bot.get_guild(498423239119208448).get_role(770453970165694545) not in before.roles:
+        return
+    role: discord.Role = bot.get_guild(498423239119208448).get_role(827625682833637389)
+    try:
+        if before.status == discord.Status.offline and after.status is not before.status:
+            await after.add_roles(role, reason="Viditelný status")
+        elif before.status != after.status and after.status == discord.Status.offline:
+            await after.remove_roles(role, reason="Je offline/neviditelný")
+    except discord.NotFound:
+        pass
 
 
 async def on_message(self, message: discord.Message):
@@ -98,17 +106,6 @@ async def on_message(self, message: discord.Message):
     await self.Monika.handleMessage(message)
     await self.Player.handle_message(message)
 
-    return
-
-
-async def check_activity(self, message: discord.Message) -> None:
-
-    if self.klacek_role in message.author.roles and message.author.status == discord.Status.offline and self.active_role in message.author.roles:
-        await message.author.remove_roles(self.active_role, reason="Neviditelný status")
-        return
-    elif self.klacek_role in message.author.roles and message.author.status == discord.Status.online and self.active_role not in message.author.roles:
-        await message.author.add_roles(self.active_role, reason="Viditelný status")
-        return
     return
 
 bot.run(TOKEN)
