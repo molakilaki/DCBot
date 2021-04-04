@@ -1,17 +1,15 @@
 import discord
+from discord.ext import commands
 import logging
 import requests as r
+import traceback
 from json import loads
-from modules.teachers.teachers import Monika
-from modules.music.player import Player
-from modules.Volby.Volby import Voter
 
 TOKEN = "ODE4ODk5MjkxMDQ4Mzc4NDIx.YEexZQ.KnLZNtYCxu-pwBQzqWAx7oRGoQo"
 debug = False
 
 DELETE_TIME = 20.0
 ADMIN = 470490558713036801
-guild_ids = [498423239119208448]
 
 if debug:
     logging.basicConfig(level=logging.DEBUG)
@@ -19,126 +17,98 @@ else:
     logging.basicConfig(level=logging.INFO)
 
 
-async def change_nick(msg: discord.Message):
-    if len(msg.content.split()) < 3:
-        await msg.channel.send("Příkaz se zadává ve formátu: '-nick @cíl přezdívka'", delete_after=DELETE_TIME)
-        return
-    args = msg.content.split(" ", 2)
-    if not (args[1].startswith("<@") and args[1].endswith(">") and msg.mentions):
-        await msg.channel.send("Příkaz se zadává ve formátu: '-nick @cíl přezdívka'", delete_after=DELETE_TIME)
-        return
-    target = msg.mentions[0]
-    nick = args[2]
+bot = commands.Bot(command_prefix="-", owner_id=ADMIN, intents=discord.Intents.all())
+
+
+# Nickname changer
+@bot.command(name="nick")
+@commands.guild_only()
+async def change_nick(ctx: commands.context, target: discord.Member, *, nick: str = None):
     nick = nick.strip()
     if len(nick) > 32:
-        await msg.channel.send("Přezdívka může mít maximálně 32 charakterů", delete_after=DELETE_TIME)
+        await ctx.send("Přezdívka může mít maximálně 32 charakterů", delete_after=DELETE_TIME)
         return
-    if nick.lower() == "none" or nick.lower() == "off" or nick.lower() == "clear":
-        nick = None
+    before = target.display_name
     try:
-        before = target.display_name
-        await target.edit(nick=nick, reason="Změnil {0.author.name} v kanálu {0.channel.name}".format(msg))
-        if not nick:
-            nick = target.name
-        await msg.channel.send("Změněno z '{0}' na '{1}'".format(before, nick))
+        await target.edit(nick=nick, reason="Změnil {0.author.name} v kanálu {0.channel.name}".format(ctx))
     except discord.Forbidden:
-        await msg.channel.send("Bohužel, tahle přezdívka pořád nejde měnit")
-    except discord.HTTPException:
-        print("Chyba při připojování na straně Discordu")
-    return
+        await ctx.send("Nemám právo měnit tuto přezdívku")
+    else:
+        await ctx.send("Změněno z '{0}' na '{1}' uživatelem `{2}`".format(before, nick, ctx.author.name))
+
+@change_nick.error
+async def nick_error(ctx, error):
+    if isinstance(error, commands.MemberNotFound):
+        await ctx.send("Uživatel nebyl nalezen")
+    elif isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("Příkaz se zadává ve formátu `-nick cíl 'přezdívka'`")
+    else:
+        await ctx.send("neočekávaná chyba <@470490558713036801>")
+        traceback.print_exc()
 
 
-async def among_get_active(channel):
+@bot.command(name="among")
+async def among_get_active(ctx: commands.context):
     url = "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?format=json&appid=945360"
     info = r.get(url)
     if info.status_code != 200:
-        await channel.send("Chyba při získávání informací od Steamu")
+        await ctx.send("Chyba při získávání informací od Steamu")
         return
     info = loads(info.text)
     stats = info["response"]
-    await channel.send("Among Us právě hraje {0} hráčů".format(stats["player_count"]))
+    await ctx.send("Among Us právě hraje {0} hráčů".format(stats["player_count"]))
     return
 
 
-class Bot(discord.Client):
+@bot.command(name="exit")
+@commands.is_owner()
+async def shutdown(ctx):
+    await ctx.send("Jdu spát")
+    for guild in bot.guilds:
+        if guild.voice_client:
+            await guild.voice_client.disconnect()
+            guild.voice_client.cleanup()
+    await bot.close()
+    exit(1)
 
-    def __init__(self, **options):
-        intents = discord.Intents.all()
-        self.guild = None
-        self.admin = None
-        self.Monika = Monika()
-        self.Player = Player()
-        self.Voter = None
-        self.active_role = None
-        self.klacek_role = None
-        self.ready = False
-        super().__init__(intents=intents, loop=None, **options)
 
-    async def on_ready(self):
-        logging.info("I'm ready! {0.name}".format(self.user))
+@bot.event
+async def on_ready():
+    logging.info("I'm ready! {0.name}".format(bot.user))
+    for guild in await bot.fetch_guilds().flatten():
+        logging.info("Connected to {0}".format(guild.name))
 
-        self.guild: discord.Guild = await self.fetch_guild(498423239119208448)
-        logging.info("Connected to {0}".format(self.guild.name))
+    admin: discord.User = await bot.fetch_user(bot.owner_id)
+    logging.info("Owner is: {0}".format(admin.name))
+    logging.info("---------\nINFO:root:Ready")
 
-        self.admin: discord.Member = await self.guild.fetch_member(ADMIN)
-        logging.info("Admin is: {0}".format(self.admin.name))
 
-        role = self.guild.get_role(802247704423825478)
-        channel = self.get_channel(802259577588547604)
-        self.Voter = Voter(role, self.guild, channel, self)
+@bot.event
+@commands.has_role(770453970165694545)
+async def on_member_update(before: discord.Member, after: discord.Member):
+    if before == discord.Status.offline and after.status is not before.status:
+        await after.add_roles(None, reason="Viditelný status")
+    elif
 
-        self.active_role = discord.utils.find(lambda r: r.id == 827625682833637389, self.guild.roles)
-        self.klacek_role = discord.utils.find(lambda r: r.id == 770453970165694545, self.guild.roles)
-        self.ready = True
 
-    async def on_message(self, message: discord.Message):
 
-        if message.author == self.user:
-            return
+async def on_message(self, message: discord.Message):
 
-        if not self.ready:
-            return
+    await self.Voter.handle_message(message)
+    await self.Monika.handleMessage(message)
+    await self.Player.handle_message(message)
 
-        try:
-            await self.check_activity(message)
-        except AttributeError:
-            pass
+    return
 
-        if message.content.startswith("-nick"):
-            logging.debug("Passed onto nickname changer")
-            await change_nick(message)
-            return
 
-        if message.content.startswith("-among"):
-            logging.debug("Passed onto Among Us fc")
-            await among_get_active(message.channel)
-            return
+async def check_activity(self, message: discord.Message) -> None:
 
-        if message.content.startswith("!exit!") and message.author == self.admin:
-            try:
-                await message.channel.send("Jdu spát")
-                await self.Player.voice_client.disconnect()
-            except AttributeError:
-                pass
-            await self.close()
-            exit(0)
-
-        await self.Voter.handle_message(message)
-        await self.Monika.handleMessage(message)
-        await self.Player.handle_message(message)
-
+    if self.klacek_role in message.author.roles and message.author.status == discord.Status.offline and self.active_role in message.author.roles:
+        await message.author.remove_roles(self.active_role, reason="Neviditelný status")
         return
-
-    async def check_activity(self, message: discord.Message) -> None:
-
-        if self.klacek_role in message.author.roles and message.author.status == discord.Status.offline and self.active_role in message.author.roles:
-            await message.author.remove_roles(self.active_role, reason="Neviditelný status")
-            return
-        elif self.klacek_role in message.author.roles and message.author.status == discord.Status.online and self.active_role not in message.author.roles:
-            await message.author.add_roles(self.active_role, reason="Viditelný status")
-            return
+    elif self.klacek_role in message.author.roles and message.author.status == discord.Status.online and self.active_role not in message.author.roles:
+        await message.author.add_roles(self.active_role, reason="Viditelný status")
         return
+    return
 
-
-bot = Bot()
 bot.run(TOKEN)
