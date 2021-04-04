@@ -14,6 +14,7 @@ SHUFFLE = ["shuffle", "mix"]
 LOOP = ["loop", "repeat"]
 PAUSE = ["pause"]
 SKIP = ["s", "skip", "n", "next"]
+REMOVE = ["remove ", "rm "]
 
 ytdl_format_options = {
     'outtmpl': 'downloads/%(id)s.mp3',
@@ -79,8 +80,9 @@ class Player:
         self.playing_task = None
         self.i = 0
 
-    def remove_song(self, song: int):
-        self.queue.remove(self.i + song)
+    def remove_song(self, song: int) -> dict:
+        song = self.queue.pop(self.i + song)
+        return song
 
     async def handle_message(self, message: discord.Message):
         if check_aliases(message.content, PLAY):
@@ -122,6 +124,12 @@ class Player:
                 self.playing_task = asyncio.create_task(self.lets_play_it())
             return
 
+        if check_aliases(message.content, REMOVE):
+            args = message.content.split(" ", 1)
+            song = self.remove_song(int(args[1]))
+            await message.channel.send("Odstraněna písnička `{0}` z fronty".format(song["title"]))
+            return
+
     async def play(self, msg: discord.Message):
         if self.voice_client and not msg.author.voice.channel == self.voice_client.channel:
             await msg.channel.send("Hraju jinde")
@@ -129,7 +137,7 @@ class Player:
         elif not msg.author.voice:
             await msg.channel.send("Nejdřív se připoj, pak budu hrát")
             return
-        elif not self.voice_client:
+        elif self.voice_client is None:
             self.voice_client: discord.VoiceClient = await msg.author.voice.channel.connect()
 
         args = msg.content.split(" ", 1)

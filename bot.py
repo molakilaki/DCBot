@@ -13,8 +13,6 @@ DELETE_TIME = 20.0
 ADMIN = 470490558713036801
 guild_ids = [498423239119208448]
 
-FILTERED_MUSIC = ["2oAZlBN2CmNieXmJ1bQDYL", "JjmMUy49mV8"]
-
 if debug:
     logging.basicConfig(level=logging.DEBUG)
 else:
@@ -101,7 +99,10 @@ class Bot(discord.Client):
         if not self.ready:
             return
 
-        await self.check_activity(message)
+        try:
+            await self.check_activity(message)
+        except AttributeError:
+            pass
 
         if message.content.startswith("-nick"):
             logging.debug("Passed onto nickname changer")
@@ -117,9 +118,10 @@ class Bot(discord.Client):
             try:
                 await message.channel.send("Jdu spát")
                 await self.Player.voice_client.disconnect()
-            finally:
-                await self.close()
-                exit(0)
+            except AttributeError:
+                pass
+            await self.close()
+            exit(0)
 
         await self.Voter.handle_message(message)
         await self.Monika.handleMessage(message)
@@ -136,6 +138,7 @@ class Bot(discord.Client):
             await message.author.add_roles(self.active_role, reason="Viditelný status")
             return
         return
+
 
 bot = Bot()
 bot.run(TOKEN)
