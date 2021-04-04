@@ -1,20 +1,12 @@
 import discord
+from discord.ext import commands
 import youtube_dl
 import logging
 import asyncio
 from random import shuffle
 import os
 
-PREFIX = "!"
-PLAY = ["play ", "p "]
-DISCONNECT = ["dc", "disconnect", "leave"]
-QUEUE = ["q", "list", "queue"]
-CLEAR = ["clear", "clr"]
-SHUFFLE = ["shuffle", "mix"]
-LOOP = ["loop", "repeat"]
-PAUSE = ["pause"]
-SKIP = ["s", "skip", "n", "next"]
-REMOVE = ["remove ", "rm "]
+MUSIC_CH_IDS = [822070192544022538, 828295231861424161, 783694547716669480]
 
 ytdl_format_options = {
     'outtmpl': 'downloads/%(id)s.mp3',
@@ -33,8 +25,9 @@ ytdl_format_options = {
         'key': 'FFmpegExtractAudio',
         'preferredcodec': 'mp3',
         'preferredquality': '320',
-        }]
+    }]
 }
+
 stim = {
     'audioquality': 5,
     'format': 'bestaudio',
@@ -50,12 +43,14 @@ stim = {
 }
 
 
-def check_aliases(message: discord.Message.content, aliases: list):
-    for alias in aliases:
-        alias = PREFIX + alias
-        if message.startswith(alias):
-            return True
-    return False
+def is_music_channel():
+    async def predicate(ctx: commands.Context):
+        for id in MUSIC_CH_IDS:
+            if id == ctx.channel.id:
+                return True
+        return False
+
+    return commands.check(predicate)
 
 
 def get_info(arg):
@@ -71,78 +66,77 @@ def download_song(url: str):
     return
 
 
-class Player:
-    def __init__(self):
+class Queue(asyncio.Queue):
+    pass
+
+
+class Player(commands.Cog):
+    def __init__(self, bot: commands.Bot):
         self.loop = False
-        self.voice_client = None
+        self.bot = bot
         logging.info("Loaded player")
         self.queue = []
         self.playing_task = None
         self.i = 0
 
-    def remove_song(self, song: int) -> dict:
+    @commands.command(name="remove", aliases=["rm"])
+    @is_music_channel()
+    async def remove_song(self, ctx: commands.Context, song: int):
         song = self.queue.pop(self.i + song)
-        return song
+        await ctx.send("Odebráno `{0}` z fronty".format(song['title']))
 
-    async def handle_message(self, message: discord.Message):
-        if check_aliases(message.content, PLAY):
-            await self.play(message)
+    @commands.command(name="shuffle")
+    @is_music_channel()
+    async def shuffle(self, ctx: commands.Context):
+        if len(self.queue) <= self.i:
             return
+        queue = self.queue[self.i:]
+        self.i = 0
+        shuffle(queue)
+        self.queue = queue
+        await ctx.send("Fronta promíchána")
 
-        if check_aliases(message.content, DISCONNECT) and self.voice_client:
-            await self.disconnect(message)
-            return
+    @commands.command(name="loop")
+    @is_music_channel()
+    async def do_loop(self, ctx: commands.Context):
+        self.loop = not self.loop
+        if self.loop:
+            await ctx.send("Smyčka zapnuta")
+        else:
+            await ctx.send("Smyčka vypnuta")
+        return
 
-        if check_aliases(message.content, QUEUE):
-            await self.print_queue(message)
-            return
-
-        if check_aliases(message.content, CLEAR) and message.author.voice.channel == self.voice_client.channel:
-            self.queue.clear()
-            self.voice_client.stop()
+    @commands.command(name="skip", aliases=["next", "n"])
+    @is_music_channel()
+    async def skip(self, ctx: commands.Context, arg: int = 1):
+        if ctx.guild.voice_client.is_playing:
+            ctx.guild.voice_client.stop()
             self.playing_task.cancel()
-            await message.channel.send("Cleared queue")
+            self.i += arg
+            self.playing_task = asyncio.create_task(self.lets_play_it())
+        return
+
+    @commands.command(name="play", aliases=["p"])
+    @commands.guild_only()
+    @is_music_channel()
+    async def play(self, ctx, *, arg=None):
+        if not ctx.author.voice:
+            await ctx.send("Nejdřív se připoj, pak budu hrát")
+            return
+        elif ctx.guild.voice_client is None:
+            await ctx.author.voice.channel.connect()
+        elif ctx.guild.voice_client and not ctx.author.voice.channel == ctx.guild.voice_client.channel:
+            await ctx.send("Hraju jinde")
+            return
+        elif ctx.guild.voice_client.is_paused:
+            ctx.guild.voice_client.resume()
+            return
+        elif not arg:
+            await ctx.send("Zadej název písničky, nebo odkaz")
             return
 
-        if check_aliases(message.content, SHUFFLE):
-            shuffle(self.queue)
-            return
-
-        if check_aliases(message.content, LOOP):
-            await self.do_loop(message)
-            return
-
-        if check_aliases(message.content, PAUSE):
-            await self.pause(message)
-            return
-
-        if check_aliases(message.content, SKIP):
-            if self.playing_task:
-                self.voice_client.stop()
-                self.playing_task.cancel()
-                self.i += 1
-                self.playing_task = asyncio.create_task(self.lets_play_it())
-            return
-
-        if check_aliases(message.content, REMOVE):
-            args = message.content.split(" ", 1)
-            song = self.remove_song(int(args[1]))
-            await message.channel.send("Odstraněna písnička `{0}` z fronty".format(song["title"]))
-            return
-
-    async def play(self, msg: discord.Message):
-        if self.voice_client and not msg.author.voice.channel == self.voice_client.channel:
-            await msg.channel.send("Hraju jinde")
-            return
-        elif not msg.author.voice:
-            await msg.channel.send("Nejdřív se připoj, pak budu hrát")
-            return
-        elif self.voice_client is None:
-            self.voice_client: discord.VoiceClient = await msg.author.voice.channel.connect()
-
-        args = msg.content.split(" ", 1)
-        await msg.channel.send(content="**Vyhledávám:** `" + args[1] + "`", embed=None)
-        data = get_info(args[1])
+        await ctx.send(content="**Vyhledávám:** `" + arg + "`", embed=None)
+        data = get_info(arg)
         await asyncio.sleep(2)
         if data['entries']:
             data = data["entries"][0]
@@ -150,9 +144,11 @@ class Player:
         song = {'title': data['title'],
                 'url': data['webpage_url'],
                 'id': data['id'],
-                'message': msg,
+                'message': ctx,
                 'duration': data['duration']}
 
+        if not ctx.guild.voice_client:
+            return
         self.queue.append(song)
         name = song['id'] + ".mp3"
 
@@ -164,75 +160,81 @@ class Player:
             logging.warning("Created 'downloads' folder")
 
         if self.playing_task and not self.playing_task.done():
-            await msg.channel.send("added {0} to the queue - link: {1}".format(song['title'], song['url']))
+            await ctx.send("added {0} to the queue - link: {1}".format(song['title'], song['url']))
         else:
             self.playing_task = asyncio.create_task(self.lets_play_it())
         return
 
-    async def disconnect(self, msg: discord.Message):
-        if not self.voice_client.channel:
-            await msg.channel.send("?!")
-        if not msg.author.voice.channel == self.voice_client.channel and len(self.voice_client.channel.members) >= 2:
-            await msg.channel.send("Hraju jinde")
+    @commands.command(name="dc")
+    @commands.guild_only()
+    @is_music_channel()
+    async def disconnect(self, ctx: commands.Context):
+        if not ctx.guild.voice_client:
+            await ctx.send("?!")
+        if not ctx.author.voice.channel == ctx.guild.voice_client.channel and len(
+                ctx.guild.voice_client.channel.members) < 2:
+            await ctx.send("Hraju jinde")
             return
 
-        self.voice_client.stop()
-        await self.voice_client.disconnect()
+        ctx.guild.voice_client.stop()
+        await ctx.guild.voice_client.disconnect()
         self.queue.clear()
-        self.voice_client = None
         return
 
-    async def pause(self, msg: discord.Message):
-        if not self.voice_client:
-            await msg.channel.send("?!")
+    @commands.command(name="pause")
+    @is_music_channel()
+    async def pause(self, ctx: commands.Context):
+        if not ctx.guild.voice_client:
+            await ctx.send("?!")
+            return
+        if not ctx.guild.voice_client.channel == ctx.author.voice.channel:
+            await ctx.send("Jestli si se mnou chceš popovídat, tak se ke mně připoj")
+            return
 
-        if not self.voice_client.channel == msg.author.voice.channel:
-            await msg.channel.send("Jestli si se mnou chceš popovídat, tak se ke mně připoj")
-
-        if not self.voice_client.is_playing() or self.voice_client.is_paused():
-            await msg.channel.send("Tak s tímhle už nic neudělám hochu")
-
-        self.voice_client.pause()
+        if not ctx.guild.voice_client.is_playing() or ctx.guild.voice_client.is_paused():
+            await ctx.send("Tak s tímhle už nic neudělám hochu")
+            return
+        ctx.guild.voice_client.pause()
         return
 
-    async def do_loop(self, msg: discord.Message):
-        self.loop = not self.loop
-        if self.loop:
-            await msg.channel.send("Smyčka zapnuta")
-        else:
-            await msg.channel.send("Smyčka vypnuta")
-        return
-
-    async def print_queue(self, msg: discord.Message):
+    @commands.command(name="queue", aliases=["q"])
+    @commands.guild_only()
+    @is_music_channel()
+    async def print_queue(self, ctx: commands.Context):
         if len(self.queue) > self.i:
             embed = discord.Embed(title="Fronta písniček")
-            now_playing = "[" + self.queue[self.i]["title"] + "](" + self.queue[self.i]["url"] + ") | `zadal " + self.queue[self.i]["message"].author.name + "`"
+            now_playing = "[" + self.queue[self.i]["title"] + "](" + self.queue[self.i]["url"] + ") | `zadal " + \
+                          self.queue[self.i]["message"].author.name + "`"
             embed.add_field(name="__Právě hraje:__", value=now_playing, inline=False)
             if len(self.queue) > self.i + 1:
-                next_playing = "`1.` [" + self.queue[self.i + 1]["title"] + "](" + self.queue[self.i + 1]["url"] + ") | `zadal " + self.queue[self.i + 1]["message"].author.name + "`\n\n"
+                next_playing = "`1.` [" + self.queue[self.i + 1]["title"] + "](" + self.queue[self.i + 1][
+                    "url"] + ") | `zadal " + self.queue[self.i + 1]["message"].author.name + "`\n\n"
                 i = 2
                 for index in range(self.i + 2, len(self.queue)):
-                    next_playing = next_playing + "`" + str(index - self.i) + ".` [" + self.queue[index]["title"] + "](" + self.queue[index]["url"] + ") | `zadal " + self.queue[index]["message"].author.name + "`\n\n"
+                    next_playing = next_playing + "`" + str(index - self.i) + ".` [" + self.queue[index][
+                        "title"] + "](" + self.queue[index]["url"] + ") | `zadal " + self.queue[index][
+                                       "message"].author.name + "`\n\n"
                     i += 1
                     if i % 10 == 0:
                         embed.add_field(name="__Následují:__", value=next_playing, inline=False)
-                        await msg.channel.send(embed=embed)
+                        await ctx.send(embed=embed)
                         next_playing = ""
                         embed = discord.Embed(title="Pokračování fronty písniček")
 
                 if i % 10 != 0:
                     embed.add_field(name="__Následují:__", value=next_playing, inline=False)
             if embed.fields:
-                await msg.channel.send(embed=embed)
+                await ctx.send(embed=embed)
         else:
-            await msg.channel.send("Fronta je prázdná")
+            await ctx.send("Fronta je prázdná")
 
     async def lets_play_it(self):
+        now_playing = None
         while self.i < len(self.queue):
             now_playing = self.queue[self.i]
             name = "./downloads/" + now_playing["id"] + ".mp3"
-            await now_playing['message'].channel.send("Teď pojede {0}".format(now_playing['title']))
-            self.voice_client.play(discord.FFmpegPCMAudio(name), after=lambda e: print('Player error: %s' % e) if e else None)
+            await now_playing['message'].send("Teď pojede {0}".format(now_playing['title']))
+            now_playing['message'].guild.voice_client.play(discord.FFmpegPCMAudio(name))
             try:
                 await asyncio.sleep(int(now_playing['duration']))
             except asyncio.CancelledError:
@@ -240,5 +242,6 @@ class Player:
             self.i += 1
         self.queue.clear()
         self.i = 0
-        self.voice_client.stop()
+        if now_playing:
+            now_playing['message'].guild.voice_client.stop()
         return

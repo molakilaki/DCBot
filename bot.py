@@ -4,6 +4,8 @@ import logging
 import requests as r
 import traceback
 from json import loads
+from modules.teachers.teachers import Monika
+from modules.music.player import Player
 
 TOKEN = "ODE4ODk5MjkxMDQ4Mzc4NDIx.YEexZQ.KnLZNtYCxu-pwBQzqWAx7oRGoQo"
 debug = False
@@ -36,6 +38,7 @@ async def change_nick(ctx: commands.context, target: discord.Member, *, nick: st
     else:
         await ctx.send("Změněno z '{0}' na '{1}' uživatelem `{2}`".format(before, nick, ctx.author.name))
 
+
 @change_nick.error
 async def nick_error(ctx, error):
     if isinstance(error, commands.MemberNotFound):
@@ -62,7 +65,7 @@ async def among_get_active(ctx: commands.context):
     return
 
 
-@bot.command(name="exit")
+@bot.command(name="exit", hidden=True)
 @commands.is_owner()
 async def shutdown(ctx):
     await ctx.send("Jdu spát")
@@ -100,12 +103,7 @@ async def on_member_update(before: discord.Member, after: discord.Member):
         pass
 
 
-async def on_message(self, message: discord.Message):
-
-    await self.Voter.handle_message(message)
-    await self.Monika.handleMessage(message)
-    await self.Player.handle_message(message)
-
-    return
+bot.add_cog(Monika(bot))
+bot.add_cog(Player(bot))
 
 bot.run(TOKEN)
