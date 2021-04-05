@@ -223,7 +223,11 @@ class Player(commands.Cog):
     @commands.guild_only()
     @is_music_channel()
     async def print_queue(self, ctx: commands.Context):
-        queue = self.database[ctx.guild]["queue"]
+        try:
+            queue = self.database[ctx.guild]["queue"]
+        except KeyError:
+            await ctx.send("Pro tento kanál neexistuje frona písniček")
+            return
         if len(queue) > 0:
             embed = discord.Embed(title="Fronta písniček")
             now_playing = "[" + queue[0]["title"] + "](" + queue[0]["url"] + ") | `zadal " + queue[0]["message"].author.name + "`"
