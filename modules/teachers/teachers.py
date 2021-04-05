@@ -1,8 +1,10 @@
 import discord
+from discord.ext import commands
 import re
 import random
 import typing
 import asyncio
+import traceback
 from modules.teachers.mathlex import mathlex, compilators
 
 
@@ -24,19 +26,11 @@ async def proc_webhooks(channel: discord.TextChannel):
     return hooks
 
 
-class Teacher:
-    async def sendMessage(self, message: str, webhook: discord.Webhook):
-        await webhook.send(message, username=self.username, avatar_url=self.avatar_url)
-
-    def handleMessage(self, message: discord.Message):
-        pass
-
-
 def doEasterEggStalin(tokens: typing.List[mathlex.Token]):
     return random.random() <= 0.1 and len(tokens) == 3 and tokens[0].data == 2 and tokens[1].data == "+" and tokens[2].data == 2
 
 
-class Monika(Teacher):
+class Monika(commands.Cog):
     mathRegex = re.compile(r"(([+\-*\/^\d=!><]+|[a-zA-Z]{0,5}\(.*\d.*\))\s*)+")
     MISTAKE_CHANCE = 0.3
     MSG_CALCULATE_TRY = [
@@ -151,12 +145,16 @@ class Monika(Teacher):
         "Odpusťte mi. Poslední dobou je toho na mě nějak moc."
     ]
 
-    def __init__(self):
-        self.username = "Monika Barešová"
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+        self.username = "Móňa"
         self.avatar_url = "https://cdn.discordapp.com/avatars/803045919666470942/0186999390d7be191e7de8e078efce51.png?size=128"
         self.isProcessingMessage = False
         self.energy = 100
         self.replenishingTask: typing.Optional[asyncio.Task] = None
+
+    async def sendMessage(self, message: str, webhook: discord.Webhook):
+        await webhook.send(content=message, username=self.username, avatar_url=self.avatar_url)
 
     async def replenishEnergyAfter10s(self):
         try:
@@ -172,104 +170,99 @@ class Monika(Teacher):
             self.replenishingTask.cancel()
         self.replenishingTask = asyncio.create_task(self.replenishEnergyAfter10s())
 
-    async def handleMessage(self, message: discord.Message):
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if message.webhook_id:
+            return
         if self.isProcessingMessage:
             return
+        m = Monika.mathRegex.search(message.content)
+        if not (m and re.search(r"\d", m.group(0)) and (re.search(r"[a-zA-Z]", m.group(0)) or re.search(r"[+\-*\/=!^<>]", m.group(0)))):
+            return
         self.isProcessingMessage = True
+        webhook = await proc_webhooks(message.channel)
+        webhook = webhook[0]
+
+        await asyncio.sleep(1)
+
+        if self.energy <= 0:
+            await self.sendMessage(random.choice(Monika.MSG_TIRED), webhook)
+            return
+
+        self.energy -= random.randint(5, 10)
+        self.startReplenishingEnergy()
 
         try:
-            await self._handleMessage(message)
-        finally:
-            self.isProcessingMessage = False
+            group = m.group(0)
+            tokens = mathlex.tokenize(group)
 
-    async def _handleMessage(self, message: discord.Message):
-        m = Monika.mathRegex.search(message.content)
-        if m and re.search(r"\d", m.group(0)) and (
-                re.search(r"[a-zA-Z]", m.group(0)) or re.search(r"[+\-*\/=!^<>]", m.group(0))):
-
-            webhook = await proc_webhooks(message.channel)
-            webhook = webhook[0]
-
-            await asyncio.sleep(1)
-
-            if self.energy <= 0:
-                await self.sendMessage(random.choice(Monika.MSG_TIRED), webhook)
+            if doEasterEggStalin(tokens):
+                await self.sendMessage("2 + 2 = 5, jak pravil strýc Štalin!", webhook)
                 return
 
-            self.energy -= random.randint(5, 10)
-            self.startReplenishingEnergy()
+            node = compilators.compile_node(tokens, compilators.COMPILE_ORDER_WITH_COMPARE)
+
+            if not node:
+                return
 
             try:
-                group = m.group(0)
-                tokens = mathlex.tokenize(group)
+                result = node()
+            except ZeroDivisionError:
+                await self.sendMessage(random.choice(self.MSG_DIVIDE_BY_ZERO), webhook)
+                return
 
-                if doEasterEggStalin(tokens):
-                    await self.sendMessage("2 + 2 = 5, jak pravil strýc Štalin!", webhook)
-                    return
+            if isinstance(result, bool):
+                # pokud výsledek je ano nebo ne (kontrola příkladu)
 
-                node = compilators.compile_node(tokens, compilators.COMPILE_ORDER_WITH_COMPARE)
-
-                if not node:
-                    return
-
-                try:
-                    result = node()
-                except ZeroDivisionError:
-                    await self.sendMessage(random.choice(Monika.MSG_DIVIDE_BY_ZERO), webhook)
-                    return
-
-                if isinstance(result, bool):
-                    # pokud výsledek je ano nebo ne (kontrola příkladu)
-
-                    if result:
-                        # MSG_CHECK_YES
-                        await self.sendMessage(random.choice(Monika.MSG_CHECK_YES), webhook)
-                    else:
-                        # MSG_CHECK_NO
-                        msg = random.choice(Monika.MSG_CHECK_NO)
-                        sorry_chance = 0
-
-                        # u některých MSG_CHECK_NO zpráv je na konci uvedena šance, že se za ně Monča omluví.
-                        percent_match = re.search(r"\((\d+)%\)$", msg)
-                        if percent_match:
-                            sorry_chance = float(percent_match.group(1)) / 100  # nastavit šanci na omluvu
-                            msg = msg[
-                                  :-len(percent_match.group(0))]  # zkrátit message o to, co odpovídá regexu (na konci)
-
-                        await self.sendMessage(msg, webhook)
-
-                        if random.random() <= sorry_chance:
-                            # Mončina omluva
-                            await asyncio.sleep(random.random() * 2 + 1)
-                            await self.sendMessage(random.choice(Monika.MSG_SORRY), webhook)
-
-                elif isinstance(result, float):
-                    # pokud výsledek je číslo (výpočet)
-
-                    # MSG_CALCULATE_TRY
-
-                    # pokud je to celé číslo, převést to na celé číslo
-                    if result % 1 == 0:
-                        result = int(result)
-
-                    # pokud se monča splete, vygenerovat náhodné číslo od -10 do 10 kromě 0, které k výsledku přičtem
-                    mistake = 0
-                    if random.random() < Monika.MISTAKE_CHANCE:
-                        while mistake == 0:
-                            mistake = random.randint(-10, 10)
-
-                    # první pokus
-                    firstTryWhole = m.group(0) + " = " + str(result + mistake)
-                    await self.sendMessage(random.choice(Monika.MSG_CALCULATE_TRY) % firstTryWhole, webhook)
-
-                    # oprava (pokud monča udělala chybu)
-                    if mistake != 0:
-                        await asyncio.sleep(random.random() * 2 + 1)
-                        await self.sendMessage(random.choice(Monika.MSG_CALCULATE_CORRECT) % result, webhook)
-
+                if result:
+                    # MSG_CHECK_YES
+                    await self.sendMessage(random.choice(self.MSG_CHECK_YES), webhook)
                 else:
-                    await self.sendMessage("Teda teď jste mě dostal.", webhook)
+                    # MSG_CHECK_NO
+                    msg = random.choice(self.MSG_CHECK_NO)
+                    sorry_chance = 0
 
-            except Exception as ex:
-                print("Monča chybovala: %s, %s" % (type(ex).__name__, ex.args))
-                await self.sendMessage(random.choice(Monika.MSG_ERROR), webhook)
+                    # u některých MSG_CHECK_NO zpráv je na konci uvedena šance, že se za ně Monča omluví.
+                    percent_match = re.search(r"\((\d+)%\)$", msg)
+                    if percent_match:
+                        sorry_chance = float(percent_match.group(1)) / 100  # nastavit šanci na omluvu
+                        msg = msg[:-len(percent_match.group(0))]  # zkrátit message o to, co odpovídá regexu (na konci)
+
+                    await self.sendMessage(msg, webhook)
+
+                    if random.random() <= sorry_chance:
+                        # Mončina omluva
+                        await asyncio.sleep(random.random() * 2 + 1)
+                        await self.sendMessage(random.choice(self.MSG_SORRY), webhook)
+
+            elif isinstance(result, float):
+                # pokud výsledek je číslo (výpočet)
+
+                # MSG_CALCULATE_TRY
+
+                # pokud je to celé číslo, převést to na celé číslo
+                if result % 1 == 0:
+                    result = int(result)
+
+                # pokud se monča splete, vygenerovat náhodné číslo od -10 do 10 kromě 0, které k výsledku přičtem
+                mistake = 0
+                if random.random() < Monika.MISTAKE_CHANCE:
+                    mistake = random.randint(abs(int(result)) * -1, abs(int(result)))
+
+                # první pokus
+                firstTryWhole = m.group(0) + " = " + str(result + mistake)
+                await self.sendMessage(random.choice(self.MSG_CALCULATE_TRY) % firstTryWhole, webhook)
+
+                # oprava (pokud monča udělala chybu)
+                if mistake != 0:
+                    await asyncio.sleep(3)
+                    await self.sendMessage((random.choice(self.MSG_CALCULATE_CORRECT) % result), webhook)
+
+            else:
+                await self.sendMessage("Teda teď jste mě dostal.", webhook)
+
+        except:
+            traceback.print_exc()
+            await self.sendMessage(random.choice(Monika.MSG_ERROR), webhook)
+
+        self.isProcessingMessage = False
