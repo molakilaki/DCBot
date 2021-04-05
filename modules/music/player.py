@@ -115,12 +115,12 @@ class Player(commands.Cog):
     @commands.command(name="loop")
     @is_music_channel()
     async def do_loop(self, ctx: commands.Context):
-        if ctx.author.voice and ctx.author.voice.channel == ctx.guild.voice_channel:
+        if ctx.author.voice and ctx.author.voice.channel == ctx.guild.voice_client.channel:
             self.database[ctx.guild]["loop"] = not self.database[ctx.guild]["loop"]
             if self.database[ctx.guild]["loop"]:
-                await ctx.send("Smyčka zapnuta")
+                await ctx.send("🔂 Smyčka zapnuta")
             else:
-                await ctx.send("Smyčka vypnuta")
+                await ctx.send("➡️ Smyčka vypnuta")
             return
 
     @commands.command(name="skip", aliases=["next", "n"])
@@ -157,7 +157,7 @@ class Player(commands.Cog):
             await ctx.send("Zadej název písničky, nebo odkaz")
             return
 
-        await ctx.send(content="**Vyhledávám:** `" + arg + "`", embed=None)
+        await ctx.send(content="🌐 **Vyhledávám:** 🔎 `" + arg + "`", embed=None)
         data = get_info(arg)
         await asyncio.sleep(2)
         if data['entries']:
@@ -167,12 +167,12 @@ class Player(commands.Cog):
                 'url': data['webpage_url'],
                 'id': data['id'],
                 'message': ctx,
-                'duration': data['duration']}
+                'duration': int(data['duration'])}
 
         if not ctx.guild.voice_client:
             return
         self.database[ctx.guild]["queue"].put(song)
-        name = song['id'] + ".mp3"
+        name = str(song['id']) + ".mp3"
 
         try:
             if name not in os.listdir("./downloads/"):
@@ -182,7 +182,19 @@ class Player(commands.Cog):
             logging.warning("Created 'downloads' folder")
 
         if "task" in self.database[ctx.guild]:
-            await ctx.send("added {0} to the queue - link: {1}".format(song['title'], song['url']))
+            embed = discord.Embed(title=song["title"], url=song["url"], colour=discord.Colour.green())
+            embed.set_author(name="Přidáno do fronty", icon_url=ctx.author.avatar_url)
+            channel = "[" + data["channel"] + "](" + data["channel_url"] + ")"
+            embed.add_field(name="Channel", value=channel, inline=True)
+            duration = str(int(song["duration"] / 60)) + ":"
+            if song["duration"] % 60 < 10:
+                duration = duration + "0"
+            duration = duration + str(int(song["duration"] % 60))
+            embed.add_field(name="Délka", value=duration, inline=True)
+            embed.add_field(name="Počet zhlédnutí", value='{:,}'.format(int(data["view_count"])), inline=True)
+            embed.set_thumbnail(url=data["thumbnail"])
+            embed.add_field(name="Pozice ve frontě", value=str(len(self.database[ctx.guild]["queue"]) - 1))
+            await ctx.send(embed=embed)
         else:
             self.database[ctx.guild]["task"] = asyncio.create_task(self.lets_play_it(ctx.guild))
         return
@@ -229,7 +241,7 @@ class Player(commands.Cog):
             await ctx.send("Pro tento kanál neexistuje fronta")
             return
         if len(queue) > 0:
-            embed = discord.Embed(title="Fronta písniček")
+            embed = discord.Embed(title="Fronta písniček", colour=discord.Colour.gold())
             now_playing = "[" + queue[0]["title"] + "](" + queue[0]["url"] + ") | `zadal " + queue[0]["message"].author.name + "`"
             embed.add_field(name="__Právě hraje:__", value=now_playing, inline=False)
             if len(queue) > 1:
@@ -256,7 +268,7 @@ class Player(commands.Cog):
         while len(self.database[guild]["queue"]) > 0:
             now_playing = self.database[guild]["queue"][0]
             name = "./downloads/" + now_playing["id"] + ".mp3"
-            await now_playing['message'].send("Teď pojede {0}".format(now_playing['title']))
+            await now_playing['message'].send("▶️ Teď hraje > `{0}`".format(now_playing['title']))
             guild.voice_client.play(discord.FFmpegPCMAudio(name))
             try:
                 await asyncio.sleep(int(now_playing['duration']))
