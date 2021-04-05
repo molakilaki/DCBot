@@ -226,7 +226,7 @@ class Player(commands.Cog):
         try:
             queue = self.database[ctx.guild]["queue"]
         except KeyError:
-            await ctx.send("Pro tento kanál neexistuje frona písniček")
+            await ctx.send("Pro tento kanál neexistuje fronta")
             return
         if len(queue) > 0:
             embed = discord.Embed(title="Fronta písniček")
