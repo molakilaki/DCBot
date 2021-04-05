@@ -6,6 +6,7 @@ import traceback
 from json import loads
 from modules.teachers.teachers import Monika
 from modules.music.player import Player
+from modules.pipa.pipa import Hostinsky
 
 TOKEN = "ODE4ODk5MjkxMDQ4Mzc4NDIx.YEexZQ.KnLZNtYCxu-pwBQzqWAx7oRGoQo"
 debug = False
@@ -105,5 +106,6 @@ async def on_member_update(before: discord.Member, after: discord.Member):
 
 bot.add_cog(Monika(bot))
 bot.add_cog(Player(bot))
+bot.add_cog(Hostinsky(bot))
 
 bot.run(TOKEN)
