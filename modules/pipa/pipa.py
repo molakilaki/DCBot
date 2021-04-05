@@ -18,8 +18,6 @@ class Hostinsky(commands.Cog):
             if key in message.content.lower():
                 await message.channel.send("Už se to nese!! 🍺")
 
-        await self.bot.process_commands(message)
-
     @commands.command(name="jelimán")
     @commands.is_owner()
     @commands.guild_only()
