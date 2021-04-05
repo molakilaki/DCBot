@@ -258,8 +258,10 @@ class Player(commands.Cog):
                 await asyncio.sleep(int(now_playing['duration']))
             except asyncio.CancelledError:
                 return
+            if guild.voice_client is None:
+                break
             if not self.database[guild]["loop"]:
                 self.database[guild]["queue"].remove(0)
-        guild.voice_client.stop()
+            guild.voice_client.stop()
         del self.database[guild]["task"]
         return
