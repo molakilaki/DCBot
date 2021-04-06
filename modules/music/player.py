@@ -241,6 +241,10 @@ class Player(commands.Cog):
             await ctx.send("Pro tento kanál neexistuje fronta")
             return
         if len(queue) > 0:
+            if self.database[ctx.guild]["loop"]:
+                loop = "✅"
+            else:
+                loop = "❌"
             embed = discord.Embed(title="Fronta písniček", colour=discord.Colour.gold())
             now_playing = "[" + queue[0]["title"] + "](" + queue[0]["url"] + ") | `zadal " + queue[0]["message"].author.name + "`"
             embed.add_field(name="__Právě hraje:__", value=now_playing, inline=False)
@@ -252,6 +256,7 @@ class Player(commands.Cog):
                     i += 1
                     if i % 10 == 0:
                         embed.add_field(name="__Následují:__", value=next_playing, inline=False)
+                        embed.set_footer(text=("🔂Loop:" + loop), icon_url=ctx.author.avatar_url)
                         await ctx.send(embed=embed)
                         next_playing = ""
                         embed = discord.Embed(title="Pokračování fronty písniček")
@@ -259,6 +264,7 @@ class Player(commands.Cog):
                 if i % 10 != 0:
                     embed.add_field(name="__Následují:__", value=next_playing, inline=False)
             if embed.fields:
+                embed.set_footer(text=("🔂Loop:" + loop), icon_url=ctx.author.avatar_url)
                 await ctx.send(embed=embed)
         else:
             await ctx.send("Fronta je prázdná")
