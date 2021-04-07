@@ -290,7 +290,7 @@ class Player(commands.Cog, name="player"):
         while len(self.database[guild]["queue"]) > 0:
             now_playing = self.database[guild]["queue"][0]
             name = "./downloads/" + now_playing["id"] + ".mp3"
-            await now_playing['message'].send("▶️ Teď hraje > `{0}`".format(now_playing['title']))
+            await now_playing['message'].send("▶️ Teď hraje > `{0}`".format(now_playing['title']), delete_after=now_playing["duration"])
             guild.voice_client.play(discord.FFmpegPCMAudio(name))
             try:
                 await asyncio.sleep(int(now_playing['duration']))

@@ -177,7 +177,8 @@ class Monika(commands.Cog):
         if self.isProcessingMessage:
             return
         m = Monika.mathRegex.search(message.content)
-        if not (m and re.search(r"\d", m.group(0)) and (re.search(r"[a-zA-Z]", m.group(0)) or re.search(r"[+\-*\/=!^<>]", m.group(0)))):
+        if not (m and re.search(r"\d", m.group(0)) and (
+                re.search(r"[a-zA-Z]", m.group(0)) or re.search(r"[+\-*\/=!^<>]", m.group(0)))):
             return
         self.isProcessingMessage = True
         webhook = await proc_webhooks(message.channel)
