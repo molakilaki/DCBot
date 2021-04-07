@@ -92,7 +92,7 @@ class Queue():
         self._queue.append(value)
 
 
-class Player(commands.Cog):
+class Player(commands.Cog, name="player"):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         logging.info("Loaded player")

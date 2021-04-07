@@ -20,7 +20,7 @@ class Hostinsky(commands.Cog):
             if key in message.content.lower():
                 await message.channel.send("Už se to nese!! 🍺")
 
-    @commands.command(name="jelimán")
+    @commands.command(name="jelimán", hidden=True)
     @commands.is_owner()
     @commands.guild_only()
     async def give_technik(self, ctx: commands.Context):
