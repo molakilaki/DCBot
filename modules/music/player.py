@@ -14,7 +14,8 @@ TOO_LONG_REVENGE = [
     "když se zamiluje kůň",
     "I play pokemon go",
     "řiditel autobusu",
-    "stick song"
+    "stick song",
+    "https://youtu.be/qOG1jkhHruk"
     ]
 
 ytdl_format_options = {
