@@ -174,7 +174,6 @@ class Player(commands.Cog):
 
         await ctx.send(content="🌐 **Vyhledávám:** 🔎 `" + arg + "`", embed=None)
         data = get_info(arg)
-        await asyncio.sleep(2)
         if data['entries']:
             data = data["entries"][0]
 
