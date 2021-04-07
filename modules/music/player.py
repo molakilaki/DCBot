@@ -1,3 +1,5 @@
+import random
+
 import discord
 from discord.ext import commands
 import youtube_dl
@@ -7,6 +9,13 @@ from random import shuffle
 import os
 
 MUSIC_CH_IDS = [822070192544022538, 828295231861424161, 783694547716669480]
+
+TOO_LONG_REVENGE = [
+    "když se zamiluje kůň",
+    "I play pokemon go",
+    "řiditel autobusu",
+    "stick song"
+    ]
 
 ytdl_format_options = {
     'outtmpl': 'downloads/%(id)s.mp3',
@@ -25,8 +34,8 @@ ytdl_format_options = {
         'key': 'FFmpegExtractAudio',
         'preferredcodec': 'mp3',
         'preferredquality': '320',
-    }]
-}
+        }]
+    }
 
 stim = {
     'audioquality': 5,
@@ -40,7 +49,7 @@ stim = {
     'no_warnings': False,
     'default_search': 'auto',
     'source_address': '0.0.0.0'
-}
+    }
 
 
 def is_music_channel():
@@ -160,7 +169,7 @@ class Player(commands.Cog, name="player"):
             self.database[ctx.guild] = {
                 "queue": Queue(),
                 "loop": False
-            }
+                }
         elif ctx.guild.voice_client and not ctx.author.voice.channel == ctx.guild.voice_client.channel:
             await ctx.send("Hraju jinde")
             return
@@ -184,6 +193,19 @@ class Player(commands.Cog, name="player"):
                 'id': data['id'],
                 'message': ctx,
                 'duration': int(data['duration'])}
+        if song["duration"] > 2400:
+            await ctx.send("Šiefeeeeeeeee")
+            await asyncio.sleep(3)
+            await ctx.send("Hej šiefeeeeeeeeeeeeeee")
+            await asyncio.sleep(1.5)
+            await ctx.send("To po mně nemůžete chtít!!!!!!")
+            await asyncio.sleep(2)
+            await ctx.send("To je moc dlouhé.......")
+            await asyncio.sleep(2)
+            await ctx.send("Poslechni si radši tohle voeeeeee")
+            await asyncio.sleep(4)
+            await self.play(ctx, arg=random.choice(TOO_LONG_REVENGE))
+            return
 
         if not ctx.guild.voice_client:
             return
@@ -268,7 +290,8 @@ class Player(commands.Cog, name="player"):
                 i = 1
                 next_playing = ""
                 for index in range(1, len(queue)):
-                    next_playing = next_playing + "`" + str(index) + ".` [" + queue[index]["title"] + "](" + queue[index]["url"] + ") | `zadal " + queue[index]["message"].author.name + "`\n\n"
+                    next_playing = next_playing + "`" + str(index) + ".` [" + queue[index]["title"] + "](" + queue[index][
+                        "url"] + ") | `zadal " + queue[index]["message"].author.name + "`\n\n"
                     i += 1
                     if i % 10 == 0:
                         embed.add_field(name="__Následují:__", value=next_playing, inline=False)
