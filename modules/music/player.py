@@ -98,6 +98,21 @@ class Player(commands.Cog):
         logging.info("Loaded player")
         self.database = {}
 
+    @commands.command(name="clear")
+    @is_music_channel()
+    async def clear(self, ctx: commands.Context):
+        if ctx.guild.voice_client is None:
+            return
+        if ctx.author.voice and ctx.author.voice.channel == ctx.guild.voice_client.channel:
+            i = 0
+            if len(self.database[ctx.guild]["queue"]) < 2:
+                await ctx.send("Není nic ve frontě na smazání")
+                return
+            for i in range(1, len(self.database[ctx.guild]["queue"])):
+                self.database[ctx.guild]["queue"].remove(i)
+
+            await ctx.send("Smazáno `" + str(i) + "`")
+
     @commands.command(name="remove", aliases=["rm"])
     @is_music_channel()
     async def remove_song(self, ctx: commands.Context, song: int):
@@ -129,7 +144,7 @@ class Player(commands.Cog):
         if ctx.guild.voice_client.is_playing and ctx.author.voice.channel == ctx.guild.voice_client.channel:
             ctx.guild.voice_client.stop()
             self.database[ctx.guild]["task"].cancel()
-            self.database[ctx.guild]["loop"] = False
+            self.database[ctx.guild]["queue"].remove(0)
             self.database[ctx.guild]["task"] = asyncio.create_task(self.lets_play_it(ctx.guild))
         return
 
