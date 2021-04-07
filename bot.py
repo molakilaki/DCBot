@@ -27,6 +27,7 @@ bot = commands.Bot(command_prefix="-", owner_id=ADMIN, intents=discord.Intents.a
 @bot.command(name="nick")
 @commands.guild_only()
 async def change_nick(ctx: commands.context, target: discord.Member, *, nick: str = None):
+    """změní nick zadanému hráčovi"""
     nick = nick.strip()
     if len(nick) > 32:
         await ctx.send("Přezdívka může mít maximálně 32 charakterů", delete_after=DELETE_TIME)
@@ -55,6 +56,7 @@ async def nick_error(ctx, error):
 
 @bot.command(name="among")
 async def among_get_active(ctx: commands.context):
+    """Vypíše počet aktivních Among Us hráčů na Steamu"""
     url = "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?format=json&appid=945360"
     info = r.get(url)
     if info.status_code != 200:
