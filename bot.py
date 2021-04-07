@@ -73,7 +73,6 @@ async def shutdown(ctx):
     for guild in bot.guilds:
         if guild.voice_client:
             await guild.voice_client.disconnect()
-            guild.voice_client.cleanup()
     await bot.close()
     exit(1)
 
