@@ -193,7 +193,7 @@ class Player(commands.Cog, name="player"):
                 'id': data['id'],
                 'message': ctx,
                 'duration': int(data['duration'])}
-        if song["duration"] > 2400:
+        if song["duration"] > 3400:
             await ctx.send("Šiefeeeeeeeee")
             await asyncio.sleep(3)
             await ctx.send("Hej šiefeeeeeeeeeeeeeee")
