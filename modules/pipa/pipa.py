@@ -72,6 +72,7 @@ class Hostinsky(commands.Cog):
     async def announcer(self, memid: int):
         oskar: discord.User = await self.bot.fetch_user(memid)
         while True:
+            await asyncio.sleep(86400)
             embed = discord.Embed(title="Tvé dnešní kalící skóre")
             embed.add_field(name="Nahráno", value=str(int(self.played_time/60))+" minut")
             if self.played_time > 14400:
@@ -91,7 +92,6 @@ class Hostinsky(commands.Cog):
                 embed.colour = discord.Colour.lighter_grey()
             await oskar.send(embed=embed)
             self.played_time = 0
-            await asyncio.sleep(86400)
 
 
 
