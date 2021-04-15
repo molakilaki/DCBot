@@ -15,7 +15,7 @@ class Hostinsky(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        asyncio.create_task(self.announcer(470490558713036801))
+        asyncio.create_task(self.announcer(765547348192526386))
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -40,7 +40,7 @@ class Hostinsky(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self, bef: discord.Member, aft: discord.Member):
-        if not bef.id == 470490558713036801:
+        if not bef.id == 765547348192526386:
             return
 
         befact = None
