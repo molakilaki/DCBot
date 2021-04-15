@@ -3,6 +3,7 @@ from discord.ext import commands
 import logging
 import requests as r
 import traceback
+import datetime
 from json import loads
 from modules.teachers.teachers import Monika
 from modules.music.player import Player
@@ -103,6 +104,17 @@ async def on_member_update(before: discord.Member, after: discord.Member):
             await after.remove_roles(role, reason="Je offline/neviditelný")
     except discord.NotFound:
         pass
+
+
+@bot.event
+async def on_command_error(ctx: commands.Context, exc: commands.CommandError):
+    if isinstance(exc, commands.CommandNotFound):
+        await ctx.send("Tenhle příkaz neexistuje.\n`-help` zobrazí dostupné příkazy")
+    else:
+        print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        traceback.print_exc()
+        msg = "<@" + str(470490558713036801) + ">, chyba"
+        await ctx.send(msg)
 
 
 bot.add_cog(Monika(bot))
