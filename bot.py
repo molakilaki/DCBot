@@ -56,7 +56,7 @@ async def nick_error(ctx, error):
 
 
 @bot.command(name="among")
-async def among_get_active(ctx: commands.context):
+async def among_get_active(ctx: commands.Context):
     """Vypíše počet aktivních Among Us hráčů na Steamu"""
     url = "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?format=json&appid=945360"
     info = r.get(url)
