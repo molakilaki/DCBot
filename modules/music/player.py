@@ -153,6 +153,7 @@ class Player(commands.Cog, name="player"):
         if ctx.author.voice and ctx.author.voice.channel == ctx.guild.voice_client.channel:
             if self.database[ctx.guild] is None or len(self.database[ctx.guild]["queue"]) == 0:
                 await ctx.send("Nehraje nic. Použij loop až když bude něco hrát")
+                return
             self.database[ctx.guild]["loop"] = not self.database[ctx.guild]["loop"]
             if self.database[ctx.guild]["loop"]:
                 await ctx.send("🔂 Smyčka zapnuta")
@@ -265,6 +266,7 @@ class Player(commands.Cog, name="player"):
         """Odpojí bota"""
         if not ctx.guild.voice_client:
             await ctx.send("?!")
+            return
         if not ctx.author.voice.channel == ctx.guild.voice_client.channel and len(
                 ctx.guild.voice_client.channel.members) < 2:
             await ctx.send("Hraju jinde")
