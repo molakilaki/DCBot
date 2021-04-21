@@ -109,7 +109,9 @@ async def on_member_update(before: discord.Member, after: discord.Member):
 @bot.event
 async def on_command_error(ctx: commands.Context, exc: commands.CommandError):
     if isinstance(exc, commands.CommandNotFound):
-        await ctx.send("Tenhle příkaz neexistuje.\n`-help` zobrazí dostupné příkazy")
+        pass
+    elif isinstance(exc, commands.CheckFailure):
+        await ctx.send("Jsi ve špatném kanálu nebo nemáš dostatečná oprávnění")
     else:
         print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         traceback.print_exc()

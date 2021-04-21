@@ -76,7 +76,7 @@ def download_song(url: str):
     return
 
 
-class Queue():
+class Queue:
     def __init__(self):
         self._queue = []
 
@@ -151,6 +151,8 @@ class Player(commands.Cog, name="player"):
     async def do_loop(self, ctx: commands.Context):
         """Přehrává právě hrající písničku neustále dokola"""
         if ctx.author.voice and ctx.author.voice.channel == ctx.guild.voice_client.channel:
+            if self.database[ctx.guild] is None or len(self.database[ctx.guild]["queue"]) == 0:
+                await ctx.send("Nehraje nic. Použij loop až když bude něco hrát")
             self.database[ctx.guild]["loop"] = not self.database[ctx.guild]["loop"]
             if self.database[ctx.guild]["loop"]:
                 await ctx.send("🔂 Smyčka zapnuta")
@@ -162,7 +164,7 @@ class Player(commands.Cog, name="player"):
     @is_music_channel()
     async def skip(self, ctx: commands.Context):
         """Přeskočí na následující písničku"""
-        if ctx.guild.voice_client.is_playing and ctx.author.voice.channel == ctx.guild.voice_client.channel:
+        if ctx.guild.voice_client.is_playing and ctx.author.voice.channel == ctx.guild.voice_client.channel and len(self.database[ctx.guild]["queue"]) > 0:
             ctx.guild.voice_client.stop()
             self.database[ctx.guild]["task"].cancel()
             self.database[ctx.guild]["queue"].remove(0)

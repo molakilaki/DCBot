@@ -15,7 +15,8 @@ class Hostinsky(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        asyncio.create_task(self.announcer(765547348192526386))
+        # asyncio.create_task(self.announcer(765547348192526386))
+        pass
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -40,6 +41,7 @@ class Hostinsky(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self, bef: discord.Member, aft: discord.Member):
+        return
         if not bef.id == 765547348192526386:
             return
 
@@ -71,7 +73,7 @@ class Hostinsky(commands.Cog):
 
     async def announcer(self, memid: int):
         oskar: discord.User = await self.bot.fetch_user(memid)
-        while True:
+        while self.bot.is_ready():
             await asyncio.sleep(86400)
             embed = discord.Embed(title="Tvé dnešní kalící skóre")
             embed.add_field(name="Nahráno", value=str(int(self.played_time/60))+" minut")
