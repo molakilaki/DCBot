@@ -50,9 +50,6 @@ async def nick_error(ctx, error):
         await ctx.send("Příkaz se zadává ve formátu `-nick cíl 'přezdívka'`")
     elif commands.NoPrivateMessage:
         await ctx.send("Nelze použít v soukromém chatu")
-    else:
-        await ctx.send("neočekávaná chyba <@470490558713036801>")
-        traceback.print_exc()
 
 
 @bot.command(name="among")
@@ -112,11 +109,12 @@ async def on_command_error(ctx: commands.Context, exc: commands.CommandError):
         pass
     elif isinstance(exc, commands.CheckFailure):
         await ctx.send("Jsi ve špatném kanálu nebo nemáš dostatečná oprávnění")
+    elif isinstance(exc, commands.MemberNotFound):
+        pass
     else:
         print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         traceback.print_exc()
-        msg = "<@" + str(470490558713036801) + ">, chyba"
-        await ctx.send(msg)
+        await ctx.send("<@" + str(470490558713036801) + ">, chyba")
 
 
 bot.add_cog(Monika(bot))
