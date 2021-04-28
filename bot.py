@@ -18,7 +18,7 @@ ADMIN = 470490558713036801
 if debug:
     logging.basicConfig(level=logging.DEBUG)
 else:
-    logging.basicConfig(level=logging.WARNING)
+    logging.basicConfig(level=logging.INFO)
 
 
 bot = commands.Bot(command_prefix="-", owner_id=ADMIN, intents=discord.Intents.all())
