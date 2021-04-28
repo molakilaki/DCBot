@@ -8,7 +8,7 @@ import asyncio
 from random import shuffle
 import os
 
-MUSIC_CH_IDS = [822070192544022538, 828295231861424161, 783694547716669480]
+MUSIC_CH_IDS = [822070192544022538, 828295231861424161, 783694547716669480, 789186662336167965]
 
 TOO_LONG_REVENGE = [
     "když se zamiluje kůň",
@@ -55,8 +55,8 @@ stim = {
 
 def is_music_channel():
     async def predicate(ctx: commands.Context):
-        for id in MUSIC_CH_IDS:
-            if id == ctx.channel.id:
+        for chid in MUSIC_CH_IDS:
+            if chid == ctx.channel.id:
                 return True
         return False
 
@@ -197,12 +197,16 @@ class Player(commands.Cog, name="player"):
             return
 
         try:
+            # Pokud bot nehraje, má zaplý časovač který ho odpojí
             self.database[ctx.guild]["disconnecter"].cancel()
         except KeyError:
             pass
 
         await ctx.send(content="🌐 **Vyhledávám:** 🔎 `" + arg + "`", embed=None)
-        data = get_info(arg)
+        if "spotify" in arg:
+            data = 1
+        else:
+            data = get_info(arg)
 
         while data is None:
             await asyncio.sleep(0.1)
@@ -215,18 +219,8 @@ class Player(commands.Cog, name="player"):
                 'id': data['id'],
                 'message': ctx,
                 'duration': int(data['duration'])}
-        if song["duration"] > 3400:
-            await ctx.send("Šiefeeeeeeeee")
-            await asyncio.sleep(3)
-            await ctx.send("Hej šiefeeeeeeeeeeeeeee")
-            await asyncio.sleep(1.5)
-            await ctx.send("To po mně nemůžete chtít!!!!!!")
-            await asyncio.sleep(2)
-            await ctx.send("To je moc dlouhé.......")
-            await asyncio.sleep(2)
-            await ctx.send("Poslechni si radši tohle voeeeeee")
-            await asyncio.sleep(4)
-            await self.play(ctx, arg=random.choice(TOO_LONG_REVENGE))
+        if song["duration"] > 10800:
+            await ctx.send("Moc dlouhé, vyber něco co má méně než 3 hodiny...")
             return
 
         if not ctx.guild.voice_client:

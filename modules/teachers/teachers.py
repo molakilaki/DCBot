@@ -9,7 +9,7 @@ from modules.teachers.mathlex import mathlex, compilators
 
 
 async def proc_webhooks(channel: discord.TextChannel):
-    # V případě že se v kanále nenachází žádný webhook, vytvoří si jeden
+    """V případě že se v kanále nenachází žádný webhook, vytvoří si jeden"""
     try:
         hooks = await channel.webhooks()
     except discord.Forbidden:
@@ -31,7 +31,7 @@ def doEasterEggStalin(tokens: typing.List[mathlex.Token]):
 
 
 class Monika(commands.Cog):
-    mathRegex = re.compile(r"(([+\-*\/^\d=!><]+|[a-zA-Z]{0,5}\(.*\d.*\))\s*)+")
+    mathRegex = re.compile(r"(([+\-*/^\d=!><]+|[a-zA-Z]{0,5}\(.*\d.*\))\s*)+")
     MISTAKE_CHANCE = 0.3
     MSG_CALCULATE_TRY = [
         "Dobrý den, %s, nebo ne?",
@@ -166,7 +166,7 @@ class Monika(commands.Cog):
     def startReplenishingEnergy(self):
         # resetovat Task, který Monče doplní energii
 
-        if self.replenishingTask != None:
+        if self.replenishingTask is not None:
             self.replenishingTask.cancel()
         self.replenishingTask = asyncio.create_task(self.replenishEnergyAfter10s())
 
@@ -177,8 +177,7 @@ class Monika(commands.Cog):
         if self.isProcessingMessage:
             return
         m = Monika.mathRegex.search(message.content)
-        if not (m and re.search(r"\d", m.group(0)) and (
-                re.search(r"[a-zA-Z]", m.group(0)) or re.search(r"[+\-*\/=!^<>]", m.group(0)))):
+        if not (m and re.search(r"\d", m.group(0)) and (re.search(r"[a-zA-Z]", m.group(0)) or re.search(r"[+\-*/=!^<>]", m.group(0)))):
             return
         self.isProcessingMessage = True
         webhook = await proc_webhooks(message.channel)

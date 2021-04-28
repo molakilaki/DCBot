@@ -40,16 +40,7 @@ async def change_nick(ctx: commands.context, target: discord.Member, *, nick: st
         await ctx.send("Nemám právo měnit tuto přezdívku")
     else:
         await ctx.send("Změněno z '{0}' na '{1}' uživatelem `{2}`".format(before, nick, ctx.author.name))
-
-
-@change_nick.error
-async def nick_error(ctx, error):
-    if isinstance(error, commands.MemberNotFound):
-        await ctx.send("Uživatel nebyl nalezen")
-    elif isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send("Příkaz se zadává ve formátu `-nick cíl 'přezdívka'`")
-    elif commands.NoPrivateMessage:
-        await ctx.send("Nelze použít v soukromém chatu")
+    return
 
 
 @bot.command(name="among")
@@ -105,12 +96,16 @@ async def on_member_update(before: discord.Member, after: discord.Member):
 
 @bot.event
 async def on_command_error(ctx: commands.Context, exc: commands.CommandError):
-    if isinstance(exc, commands.CommandNotFound):
+    if isinstance(exc, commands.MemberNotFound):
+        await ctx.send("Uživatel nebyl nalezen")
+    elif isinstance(exc, commands.MissingRequiredArgument):
+        await ctx.send("Špatné formátování příkazu. Nedodány veškeré argumenty")
+    elif commands.NoPrivateMessage:
+        await ctx.send("Nelze použít v soukromém chatu")
+    elif isinstance(exc, commands.CommandNotFound):
         pass
     elif isinstance(exc, commands.CheckFailure):
         await ctx.send("Jsi ve špatném kanálu nebo nemáš dostatečná oprávnění")
-    elif isinstance(exc, commands.MemberNotFound):
-        pass
     else:
         print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         traceback.print_exc()
