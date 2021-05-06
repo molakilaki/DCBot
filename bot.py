@@ -33,7 +33,7 @@ async def countdown_task():
     maturita_end = datetime.datetime(2021, 6, 7, 11, tzinfo=tzone)
     mozolov = datetime.datetime(2021, 6, 25, 13, tzinfo=tzone)
     ragnarok = datetime.datetime(2021, 6, 29, 21, tzinfo=tzone)
-    #await asyncio.sleep((60 - datetime.datetime.now().minute) * 60 + 1)
+    await asyncio.sleep((60 - datetime.datetime.now().minute) * 60 + 1)
     while True:
         embed = discord.Embed(title="Odpočet")
         now = datetime.datetime.now(tz=tzone)
