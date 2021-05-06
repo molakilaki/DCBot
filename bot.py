@@ -28,12 +28,12 @@ bot = commands.Bot(command_prefix="-", owner_id=ADMIN, intents=discord.Intents.a
 
 async def countdown_task():
     message: discord.Message = await bot.get_channel(839882036407828480).fetch_message(839890990856536116)
-    tzone = datetime.timezone(datetime.timedelta(hours=-2), "CEST")
-    maturita_start = datetime.datetime(2021, 6, 1, 8, tzinfo=tzone)
-    maturita_end = datetime.datetime(2021, 6, 7, 14, tzinfo=tzone)
-    mozolov = datetime.datetime(2021, 6, 25, 16, tzinfo=tzone)
-    ragnarok = datetime.datetime(2021, 6, 30, tzinfo=tzone)
-    await asyncio.sleep((60 - datetime.datetime.now().minute) * 60 + 1)
+    tzone = datetime.timezone(datetime.timedelta(hours=-2))
+    maturita_start = datetime.datetime(2021, 6, 1, 5, tzinfo=tzone)
+    maturita_end = datetime.datetime(2021, 6, 7, 11, tzinfo=tzone)
+    mozolov = datetime.datetime(2021, 6, 25, 13, tzinfo=tzone)
+    ragnarok = datetime.datetime(2021, 6, 29, 21, tzinfo=tzone)
+    #await asyncio.sleep((60 - datetime.datetime.now().minute) * 60 + 1)
     while True:
         embed = discord.Embed(title="Odpočet")
         now = datetime.datetime.now(tz=tzone)
