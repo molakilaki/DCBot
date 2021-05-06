@@ -1,3 +1,5 @@
+import asyncio
+
 import discord
 from discord.ext import commands
 import logging
@@ -22,6 +24,47 @@ else:
 
 
 bot = commands.Bot(command_prefix="-", owner_id=ADMIN, intents=discord.Intents.all())
+
+
+async def countdown_task():
+    message: discord.Message = await bot.get_channel(839882036407828480).fetch_message(839890990856536116)
+    tzone = datetime.timezone(datetime.timedelta(hours=-2), "CEST")
+    maturita_start = datetime.datetime(2021, 6, 1, 8, tzinfo=tzone)
+    maturita_end = datetime.datetime(2021, 6, 7, 14, tzinfo=tzone)
+    mozolov = datetime.datetime(2021, 6, 25, 16, tzinfo=tzone)
+    ragnarok = datetime.datetime(2021, 6, 30, tzinfo=tzone)
+    await asyncio.sleep(3601 - datetime.datetime.now().minute)
+    while True:
+        embed = discord.Embed(title="Odpočet")
+        now = datetime.datetime.now(tz=tzone)
+        embed.timestamp = now
+        if abs(ragnarok - now) == ragnarok - now:
+            colour = discord.Colour.blue()
+            if abs(mozolov - now) == mozolov - now:
+                colour = discord.Colour.green()
+                if abs(maturita_end - now) == maturita_end - now:
+                    colour = discord.Colour.orange()
+                    if abs(maturita_start - now) == maturita_start - now:
+                        colour = discord.Colour.red()
+                        hodnota = "Počet dní: " + str((maturita_start - now).days) + " Počet hodin: " + str(int((maturita_start - now).seconds / 3600))
+                        embed.add_field(name="Maturita", value=hodnota, inline=False)
+                    else:
+                        embed.add_field(name="Maturita", value="Právě probíhá 😥", inline=False)
+                    hodnota = "Počet dní: " + str((maturita_end - now).days) + " Počet hodin: " + str(int((maturita_end - now).seconds / 3600))
+                    embed.add_field(name="Konec maturity", value=hodnota, inline=False)
+                hodnota = "Počet dní: " + str((mozolov - now).days) + " Počet hodin: " + str(int((mozolov - now).seconds / 3600))
+                embed.add_field(name="Čas do Mozolova", value=hodnota, inline=False)
+            hodnota = "Počet dní: " + str((ragnarok - now).days) + " Počet hodin: " + str(int((ragnarok - now).seconds / 3600))
+            embed.add_field(name="Ragnarok naší třídy", value=hodnota, inline=False)
+        else:
+            embed.add_field(name="Rád jsem vás poznal", value="Snad se ještě někdy uvidíme")
+            colour = discord.Colour.gold()
+            embed.colour = colour
+            await message.edit(content=None, embed=embed)
+            return
+        embed.colour = colour
+        await message.edit(content=None, embed=embed)
+        await asyncio.sleep(3600)
 
 
 # Nickname changer
@@ -65,7 +108,7 @@ async def shutdown(ctx):
         if guild.voice_client:
             await guild.voice_client.disconnect()
     await bot.close()
-    exit(1)
+    exit(0)
 
 
 @bot.event
@@ -78,6 +121,7 @@ async def on_ready():
     logging.info("Owner is: {0}".format(admin.name))
     logging.info("---------")
     logging.info("°°Ready°°")
+    asyncio.create_task(countdown_task())
 
 
 @bot.event
