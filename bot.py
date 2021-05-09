@@ -1,15 +1,14 @@
-import asyncio
-
 import discord
 from discord.ext import commands
 import logging
 import requests as r
 import traceback
-import datetime
+from datetime import datetime
 from json import loads
 from modules.teachers.teachers import Monika
-from modules.music.player import Player
+from modules.music.player import Player, NoMusicChannel
 from modules.pipa.pipa import Hostinsky
+from modules.countdown import Countdown
 
 TOKEN = "ODE4ODk5MjkxMDQ4Mzc4NDIx.YEexZQ.KnLZNtYCxu-pwBQzqWAx7oRGoQo"
 debug = False
@@ -24,47 +23,6 @@ else:
 
 
 bot = commands.Bot(command_prefix="-", owner_id=ADMIN, intents=discord.Intents.all())
-
-
-async def countdown_task():
-    message: discord.Message = await bot.get_channel(839882036407828480).fetch_message(839890990856536116)
-    tzone = datetime.timezone(datetime.timedelta(hours=-2))
-    maturita_start = datetime.datetime(2021, 6, 1, 5, tzinfo=tzone)
-    maturita_end = datetime.datetime(2021, 6, 7, 11, tzinfo=tzone)
-    mozolov = datetime.datetime(2021, 6, 25, 13, tzinfo=tzone)
-    ragnarok = datetime.datetime(2021, 6, 29, 21, tzinfo=tzone)
-    await asyncio.sleep((60 - datetime.datetime.now().minute) * 60 + 1)
-    while True:
-        embed = discord.Embed(title="Odpočet")
-        now = datetime.datetime.now(tz=tzone)
-        embed.timestamp = now
-        if abs(ragnarok - now) == ragnarok - now:
-            colour = discord.Colour.blue()
-            if abs(mozolov - now) == mozolov - now:
-                colour = discord.Colour.green()
-                if abs(maturita_end - now) == maturita_end - now:
-                    colour = discord.Colour.orange()
-                    if abs(maturita_start - now) == maturita_start - now:
-                        colour = discord.Colour.red()
-                        hodnota = "Počet dní: " + str((maturita_start - now).days) + " Počet hodin: " + str(int((maturita_start - now).seconds / 3600))
-                        embed.add_field(name="Maturita", value=hodnota, inline=False)
-                    else:
-                        embed.add_field(name="Maturita", value="Právě probíhá 😥", inline=False)
-                    hodnota = "Počet dní: " + str((maturita_end - now).days) + " Počet hodin: " + str(int((maturita_end - now).seconds / 3600))
-                    embed.add_field(name="Konec maturity", value=hodnota, inline=False)
-                hodnota = "Počet dní: " + str((mozolov - now).days) + " Počet hodin: " + str(int((mozolov - now).seconds / 3600))
-                embed.add_field(name="Čas do Mozolova", value=hodnota, inline=False)
-            hodnota = "Počet dní: " + str((ragnarok - now).days) + " Počet hodin: " + str(int((ragnarok - now).seconds / 3600))
-            embed.add_field(name="Ragnarok naší třídy", value=hodnota, inline=False)
-        else:
-            embed.add_field(name="Rád jsem vás poznal", value="Snad se ještě někdy uvidíme")
-            colour = discord.Colour.gold()
-            embed.colour = colour
-            await message.edit(content=None, embed=embed)
-            return
-        embed.colour = colour
-        await message.edit(content=None, embed=embed)
-        await asyncio.sleep(3600)
 
 
 # Nickname changer
@@ -121,7 +79,6 @@ async def on_ready():
     logging.info("Owner is: {0}".format(admin.name))
     logging.info("---------")
     logging.info("°°Ready°°")
-    asyncio.create_task(countdown_task())
 
 
 @bot.event
@@ -144,18 +101,19 @@ async def on_command_error(ctx: commands.Context, exc: commands.CommandError):
         await ctx.send("Uživatel nebyl nalezen")
     elif isinstance(exc, commands.MissingRequiredArgument):
         await ctx.send("Špatné formátování příkazu. Nedodány veškeré argumenty")
-    elif commands.NoPrivateMessage:
-        await ctx.send("Nelze použít v soukromém chatu")
     elif isinstance(exc, commands.CommandNotFound):
         pass
-    elif isinstance(exc, commands.CheckFailure):
+    elif isinstance(exc, commands.NoPrivateMessage):
+        await ctx.send("Nelze použít v soukromém chatu")
+    elif isinstance(exc, NoMusicChannel):
         await ctx.send("Jsi ve špatném kanálu nebo nemáš dostatečná oprávnění")
     else:
-        print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         traceback.print_exc()
         await ctx.send("<@" + str(470490558713036801) + ">, chyba")
 
 
+bot.add_cog(Countdown(bot))
 bot.add_cog(Monika(bot))
 bot.add_cog(Player(bot))
 bot.add_cog(Hostinsky(bot))

@@ -8,7 +8,7 @@ import asyncio
 from random import shuffle
 import os
 
-MUSIC_CH_IDS = [822070192544022538, 828295231861424161, 783694547716669480, 789186662336167965]
+MUSIC_CH_IDS = [822070192544022538, 789186662336167965]
 
 TOO_LONG_REVENGE = [
     "když se zamiluje kůň",
@@ -53,12 +53,16 @@ stim = {
     }
 
 
+class NoMusicChannel(commands.CheckFailure):
+    pass
+
+
 def is_music_channel():
     async def predicate(ctx: commands.Context):
         for chid in MUSIC_CH_IDS:
             if chid == ctx.channel.id:
                 return True
-        return False
+        raise NoMusicChannel
 
     return commands.check(predicate)
 
