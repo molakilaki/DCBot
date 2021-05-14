@@ -203,7 +203,7 @@ class Player(commands.Cog, name="player"):
         except KeyError:
             pass
 
-        searching: discord.Message = await ctx.channel.send(content="🌐 **Vyhledávám:** 🔎 `" + arg + "`", embed=None)
+        searching: discord.Message = await ctx.send(content="🌐 **Vyhledávám:** 🔎 `" + arg + "`", embed=None)
         if "spotify" in arg:
             data = 1
         else:
@@ -215,11 +215,11 @@ class Player(commands.Cog, name="player"):
         if data.get('entries'):
             data = data["entries"][0]
 
-        song = {'title': data['title'],
-                'url': data['webpage_url'],
-                'id': data['id'],
+        song = {'title': data.get('title'),
+                'url': data.get('webpage_url'),
+                'id': data.get('id'),
                 'message': ctx,
-                'duration': int(data['duration'])}
+                'duration': int(data.get('duration'))}
         if song["duration"] > 10800:
             await ctx.send("Moc dlouhé, vyber něco co má méně než 3 hodiny...")
             await searching.delete()
