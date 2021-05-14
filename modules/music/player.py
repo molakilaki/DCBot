@@ -417,11 +417,12 @@ class Player(commands.Cog, name="player"):
 class Disconnecter:
     def __init__(self, guild: discord.Guild):
         self.guild = guild
-        self.time = 898
+        self.time = 900
         self.countdownv = asyncio.create_task(self.countdown())
 
     def cancel(self):
         self.countdownv.cancel()
+        del self
 
     async def countdown(self):
         try:
