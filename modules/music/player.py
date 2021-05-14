@@ -203,7 +203,7 @@ class Player(commands.Cog, name="player"):
         except KeyError:
             pass
 
-        searching: discord.Member = await ctx.channel.send(content="🌐 **Vyhledávám:** 🔎 `" + arg + "`", embed=None)
+        searching: discord.Message = await ctx.channel.send(content="🌐 **Vyhledávám:** 🔎 `" + arg + "`", embed=None)
         if "spotify" in arg:
             data = 1
         else:
@@ -251,7 +251,7 @@ class Player(commands.Cog, name="player"):
             embed.add_field(name="Počet zhlédnutí", value='{:,}'.format(int(data["view_count"])), inline=True)
             embed.set_thumbnail(url=data["thumbnail"])
             embed.add_field(name="Pozice ve frontě", value=str(len(self.database[ctx.guild]["queue"]) - 1))
-            await ctx.send(embed=embed)
+            await ctx.channel.send(embed=embed)
         else:
             self.database[ctx.guild]["task"] = asyncio.create_task(self.lets_play_it(ctx.guild))
         await searching.delete()
@@ -371,7 +371,7 @@ class Player(commands.Cog, name="player"):
     async def _skip(self, ctx: SlashContext):
         await self.skip(ctx)
 
-    @cog_ext.cog_slash(name="clear", description="Vyčistí celý queue")
+    @cog_ext.cog_slash(name="clear", description="Vyčistí celou frontu")
     @is_music_channel()
     async def _clear(self, ctx: SlashContext):
         await self.clear(ctx)

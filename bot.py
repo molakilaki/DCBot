@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from discord_slash import SlashCommand, SlashContext
-from discord_slash.utils.manage_commands import create_option, remove_all_commands
+from discord_slash.utils.manage_commands import create_option
 import logging
 import requests as r
 import traceback
@@ -119,7 +119,7 @@ async def on_command_error(ctx: commands.Context, exc: commands.CommandError):
         await ctx.send("<@" + str(470490558713036801) + ">, chyba")
 
 
-@slash.slash(name="ping")
+@slash.slash(name="ping", description="Pong")
 async def _ping(ctx: SlashContext):
     await pong(ctx)
 
@@ -129,7 +129,7 @@ async def _among(ctx: SlashContext):
     await among_get_active(ctx)
 
 
-@slash.slash(name="přezdívka", description="Změní nick uživateli",
+@slash.slash(name="nick", description="Změní nick uživateli",
              options=[create_option(name="user",
                                     description="Cíl kterému měníš přezdívku",
                                     option_type=6,
