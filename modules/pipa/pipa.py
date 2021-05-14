@@ -20,13 +20,3 @@ class Hostinsky(commands.Cog):
         for key in ALKOHOL:
             if key in message.content.lower():
                 await message.channel.send("Už se to nese!! 🍺")
-
-    @commands.command(name="jelimán", hidden=True)
-    @commands.is_owner()
-    @commands.guild_only()
-    async def give_technik(self, ctx: commands.Context):
-        role = self.bot.get_guild(765898623610912809).get_role(783695649488633877)
-        try:
-            await ctx.author.add_roles(role, reason="Je to borec a tuhle roli si kurva zaslouží!!!")
-        except discord.NotFound:
-            await ctx.send("Musíš si o ní napsat na správným serveru")

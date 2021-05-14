@@ -1,7 +1,7 @@
-import random
-
 import discord
 from discord.ext import commands
+from discord_slash import cog_ext, SlashContext
+from discord_slash.utils.manage_commands import create_option
 import youtube_dl
 import logging
 import asyncio
@@ -16,7 +16,7 @@ TOO_LONG_REVENGE = [
     "řiditel autobusu",
     "stick song",
     "https://youtu.be/qOG1jkhHruk"
-    ]
+]
 
 ytdl_format_options = {
     'outtmpl': 'downloads/%(id)s.mp3',
@@ -35,8 +35,8 @@ ytdl_format_options = {
         'key': 'FFmpegExtractAudio',
         'preferredcodec': 'mp3',
         'preferredquality': '320',
-        }]
-    }
+    }]
+}
 
 stim = {
     'audioquality': 5,
@@ -50,11 +50,7 @@ stim = {
     'no_warnings': False,
     'default_search': 'auto',
     'source_address': '0.0.0.0'
-    }
-
-
-class NoMusicChannel(commands.CheckFailure):
-    pass
+}
 
 
 def is_music_channel():
@@ -62,7 +58,8 @@ def is_music_channel():
         for chid in MUSIC_CH_IDS:
             if chid == ctx.channel.id:
                 return True
-        raise NoMusicChannel
+        await ctx.send("Jsi ve špatném kanálu nebo nemáš dostatečná oprávnění")
+        return False
 
     return commands.check(predicate)
 
@@ -169,7 +166,8 @@ class Player(commands.Cog, name="player"):
     @is_music_channel()
     async def skip(self, ctx: commands.Context):
         """Přeskočí na následující písničku"""
-        if ctx.guild.voice_client.is_playing and ctx.author.voice.channel == ctx.guild.voice_client.channel and len(self.database[ctx.guild]["queue"]) > 0:
+        if ctx.guild.voice_client.is_playing and ctx.author.voice.channel == ctx.guild.voice_client.channel and len(
+                self.database[ctx.guild]["queue"]) > 0:
             ctx.guild.voice_client.stop()
             self.database[ctx.guild]["task"].cancel()
             self.database[ctx.guild]["queue"].remove(0)
@@ -177,7 +175,6 @@ class Player(commands.Cog, name="player"):
         return
 
     @commands.command(name="play", aliases=["p"])
-    @commands.guild_only()
     @is_music_channel()
     async def play(self, ctx, *, arg=None):
         """Zadá novou písničku do fronty nebo pokračuje po pauze"""
@@ -189,7 +186,7 @@ class Player(commands.Cog, name="player"):
             self.database[ctx.guild] = {
                 "queue": Queue(),
                 "loop": False
-                }
+            }
         elif ctx.guild.voice_client and not ctx.author.voice.channel == ctx.guild.voice_client.channel:
             await ctx.send("Hraju jinde")
             return
@@ -206,7 +203,7 @@ class Player(commands.Cog, name="player"):
         except KeyError:
             pass
 
-        await ctx.send(content="🌐 **Vyhledávám:** 🔎 `" + arg + "`", embed=None)
+        searching: discord.Member = await ctx.channel.send(content="🌐 **Vyhledávám:** 🔎 `" + arg + "`", embed=None)
         if "spotify" in arg:
             data = 1
         else:
@@ -225,9 +222,11 @@ class Player(commands.Cog, name="player"):
                 'duration': int(data['duration'])}
         if song["duration"] > 10800:
             await ctx.send("Moc dlouhé, vyber něco co má méně než 3 hodiny...")
+            await searching.delete()
             return
 
         if not ctx.guild.voice_client:
+            await searching.delete()
             return
         self.database[ctx.guild]["queue"].put(song)
         name = str(song['id']) + ".mp3"
@@ -255,10 +254,10 @@ class Player(commands.Cog, name="player"):
             await ctx.send(embed=embed)
         else:
             self.database[ctx.guild]["task"] = asyncio.create_task(self.lets_play_it(ctx.guild))
+        await searching.delete()
         return
 
     @commands.command(name="dc")
-    @commands.guild_only()
     @is_music_channel()
     async def disconnect(self, ctx: commands.Context):
         """Odpojí bota"""
@@ -297,7 +296,6 @@ class Player(commands.Cog, name="player"):
         return
 
     @commands.command(name="queue", aliases=["q"])
-    @commands.guild_only()
     @is_music_channel()
     async def print_queue(self, ctx: commands.Context):
         """Odešle frontu"""
@@ -312,14 +310,16 @@ class Player(commands.Cog, name="player"):
             else:
                 loop = "❌"
             embed = discord.Embed(title="Fronta písniček", colour=discord.Colour.gold())
-            now_playing = "[" + queue[0]["title"] + "](" + queue[0]["url"] + ") | `zadal " + queue[0]["message"].author.name + "`"
+            now_playing = "[" + queue[0]["title"] + "](" + queue[0]["url"] + ") | `zadal " + queue[0][
+                "message"].author.name + "`"
             embed.add_field(name="__Právě hraje:__", value=now_playing, inline=False)
             if len(queue) > 1:
                 i = 1
                 next_playing = ""
                 for index in range(1, len(queue)):
-                    next_playing = next_playing + "`" + str(index) + ".` [" + queue[index]["title"] + "](" + queue[index][
-                        "url"] + ") | `zadal " + queue[index]["message"].author.name + "`\n\n"
+                    next_playing = next_playing + "`" + str(index) + ".` [" + queue[index]["title"] + "](" + \
+                                   queue[index][
+                                       "url"] + ") | `zadal " + queue[index]["message"].author.name + "`\n\n"
                     i += 1
                     if i % 10 == 0:
                         embed.add_field(name="__Následují:__", value=next_playing, inline=False)
@@ -341,7 +341,8 @@ class Player(commands.Cog, name="player"):
         while len(self.database[guild]["queue"]) > 0:
             now_playing = self.database[guild]["queue"][0]
             name = "./downloads/" + now_playing["id"] + ".mp3"
-            await now_playing['message'].send("▶️ Teď hraje > `{0}`".format(now_playing['title']), delete_after=now_playing["duration"])
+            await now_playing['message'].send("▶️ Teď hraje > `{0}`".format(now_playing['title']),
+                                              delete_after=now_playing["duration"])
             guild.voice_client.play(discord.FFmpegPCMAudio(name))
             try:
                 await asyncio.sleep(int(now_playing['duration']))
@@ -355,6 +356,62 @@ class Player(commands.Cog, name="player"):
         del self.database[guild]["task"]
         self.database[guild]["disconnecter"] = Disconnecter(guild)
         return
+
+    '''
+    SLASH COMMANDS
+    '''
+
+    @cog_ext.cog_slash(name="disconnect", description="Odpojí bota")
+    @is_music_channel()
+    async def _disconnect(self, ctx: SlashContext):
+        await self.disconnect(ctx)
+
+    @cog_ext.cog_slash(name="skip", description="Přeskočí právě hranou písničku")
+    @is_music_channel()
+    async def _skip(self, ctx: SlashContext):
+        await self.skip(ctx)
+
+    @cog_ext.cog_slash(name="clear", description="Vyčistí celý queue")
+    @is_music_channel()
+    async def _clear(self, ctx: SlashContext):
+        await self.clear(ctx)
+
+    @cog_ext.cog_slash(name="loop", description="Přepne opakování písničky")
+    @is_music_channel()
+    async def _loop(self, ctx: SlashContext):
+        await self.do_loop(ctx)
+
+    @cog_ext.cog_slash(name="pause", description="Pozastaví přehrávání")
+    @is_music_channel()
+    async def _pause(self, ctx: SlashContext):
+        await self.pause(ctx)
+
+    @cog_ext.cog_slash(name="play", description="Přehraje písničku", options=[create_option(name="song",
+                                                                                            required=False,
+                                                                                            option_type=3,
+                                                                                            description="Písnička")])
+    @is_music_channel()
+    async def _play(self, ctx: SlashContext, song=None):
+        await ctx.defer()
+        await self.play(ctx, arg=song)
+
+    @cog_ext.cog_slash(name="queue", description="Zobrazí frontu")
+    @is_music_channel()
+    async def _queue(self, ctx: SlashContext):
+        await self.print_queue(ctx)
+
+    @cog_ext.cog_slash(name="remove", description="Odebere písničku z fronty", options=[create_option(name="index",
+                                                                                                      required=True,
+                                                                                                      option_type=4,
+                                                                                                      description="Pořadí ve frontě")])
+    @is_music_channel()
+    async def _remove(self, ctx: SlashContext, index):
+        await self.remove_song(ctx, index)
+
+    @cog_ext.cog_slash(name="shuffle", description="Zamíchá frontu")
+    @is_music_channel()
+    async def _shuffle(self, ctx: SlashContext):
+        await self.shuffle(ctx)
 
 
 class Disconnecter:
@@ -375,5 +432,3 @@ class Disconnecter:
             await self.guild.voice_client.disconnect()
         except AttributeError:
             pass
-
-
