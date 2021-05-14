@@ -192,6 +192,7 @@ class Player(commands.Cog, name="player"):
             return
         elif ctx.guild.voice_client.is_paused and arg is None:
             ctx.guild.voice_client.resume()
+            await ctx.send("A jedem")
             return
         elif not arg:
             await ctx.send("Zadej název písničky, nebo odkaz")
