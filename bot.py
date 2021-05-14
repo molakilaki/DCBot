@@ -120,13 +120,6 @@ async def on_command_error(ctx: commands.Context, exc: commands.CommandError):
         await ctx.send("<@" + str(470490558713036801) + ">, chyba")
 
 
-@bot.event
-async def on_slash_command_error(ctx: SlashContext, exc: error.SlashCommandError):
-    print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-    traceback.print_exc()
-    await ctx.channel.send("<@" + str(470490558713036801) + ">, chyba")
-
-
 @slash.slash(name="ping", description="Pong")
 async def _ping(ctx: SlashContext):
     await pong(ctx)
