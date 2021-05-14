@@ -194,7 +194,7 @@ class Player(commands.Cog, name="player"):
         elif ctx.guild.voice_client and not ctx.author.voice.channel == ctx.guild.voice_client.channel:
             await ctx.send("Hraju jinde")
             return
-        elif ctx.guild.voice_client.is_paused and arg is None:
+        elif ctx.guild.voice_client and ctx.guild.voice_client.is_paused and arg is None:
             ctx.guild.voice_client.resume()
             await ctx.send("A jedem")
             return
