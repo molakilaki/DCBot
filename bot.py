@@ -7,6 +7,7 @@ import requests as r
 import traceback
 from datetime import datetime
 from json import loads
+from typing import Union
 from modules.teachers.teachers import Monika
 from modules.music.player import Player
 from modules.pipa.pipa import Hostinsky
@@ -31,7 +32,7 @@ slash = SlashCommand(bot, sync_commands=True)
 # Nickname changer
 @bot.command(name="nick")
 @commands.guild_only()
-async def change_nick(ctx: commands.context, target: discord.Member, *, nick: str = None):
+async def change_nick(ctx: Union[commands.context, SlashContext], target: discord.Member, *, nick: str = None):
     """změní nick zadanému hráčovi"""
     nick = nick.strip()
     if len(nick) > 32:
@@ -48,7 +49,7 @@ async def change_nick(ctx: commands.context, target: discord.Member, *, nick: st
 
 
 @bot.command(name="among")
-async def among_get_active(ctx: commands.Context):
+async def among_get_active(ctx: Union[commands.Context, SlashContext]):
     """Vypíše počet aktivních Among Us hráčů na Steamu"""
     url = "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?format=json&appid=945360"
     info = r.get(url)
@@ -62,13 +63,13 @@ async def among_get_active(ctx: commands.Context):
 
 
 @bot.command(name="ping")
-async def pong(ctx: commands.Context):
+async def pong(ctx: Union[commands.Context, SlashContext]):
     await ctx.send("pong")
 
 
 @bot.command(name="exit", hidden=True)
 @commands.is_owner()
-async def shutdown(ctx):
+async def shutdown(ctx: Union[commands.Context, SlashContext]):
     await ctx.send("Jdu spát")
     for guild in bot.guilds:
         if guild.voice_client:
@@ -117,6 +118,8 @@ async def on_command_error(ctx: commands.Context, exc: commands.CommandError):
         print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         traceback.print_exc()
         await ctx.send("<@" + str(470490558713036801) + ">, chyba")
+
+@
 
 
 @slash.slash(name="ping", description="Pong")

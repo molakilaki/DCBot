@@ -6,6 +6,7 @@ import youtube_dl
 import logging
 import asyncio
 from random import shuffle
+from typing import Union
 import os
 
 MUSIC_CH_IDS = [822070192544022538, 789186662336167965]
@@ -117,7 +118,7 @@ class Player(commands.Cog, name="player"):
 
     @commands.command(name="clear")
     @is_music_channel()
-    async def clear(self, ctx: commands.Context):
+    async def clear(self, ctx: Union[commands.Context, SlashContext]):
         """Vyčistí queue kromě právě hrající písničky"""
         if ctx.guild.voice_client is None:
             return
@@ -133,7 +134,7 @@ class Player(commands.Cog, name="player"):
 
     @commands.command(name="remove", aliases=["rm"])
     @is_music_channel()
-    async def remove_song(self, ctx: commands.Context, song: int):
+    async def remove_song(self, ctx: Union[commands.Context, SlashContext], song: int):
         """Odstraní písničku na zadaném indexu"""
         songeros = self.database[ctx.guild]["queue"][song]
         self.database[ctx.guild]["queue"].remove(song)
@@ -141,7 +142,7 @@ class Player(commands.Cog, name="player"):
 
     @commands.command(name="shuffle")
     @is_music_channel()
-    async def shuffle(self, ctx: commands.Context):
+    async def shuffle(self, ctx: Union[commands.Context, SlashContext]):
         """Zamíchá pořadí ve frontě"""
         if ctx.author.voice and ctx.author.voice.channel == ctx.guild.voice_channel:
             self.database[ctx.guild]["queue"].shuffle()
@@ -149,7 +150,7 @@ class Player(commands.Cog, name="player"):
 
     @commands.command(name="loop")
     @is_music_channel()
-    async def do_loop(self, ctx: commands.Context):
+    async def do_loop(self, ctx: Union[commands.Context, SlashContext]):
         """Přehrává právě hrající písničku neustále dokola"""
         if ctx.author.voice and ctx.author.voice.channel == ctx.guild.voice_client.channel:
             if self.database[ctx.guild] is None or len(self.database[ctx.guild]["queue"]) == 0:
@@ -164,20 +165,22 @@ class Player(commands.Cog, name="player"):
 
     @commands.command(name="skip", aliases=["next", "n"])
     @is_music_channel()
-    async def skip(self, ctx: commands.Context):
+    async def skip(self, ctx: Union[commands.Context, SlashContext]):
         """Přeskočí na následující písničku"""
-        if ctx.guild.voice_client.is_playing and ctx.author.voice.channel == ctx.guild.voice_client.channel and len(
-                self.database[ctx.guild]["queue"]) > 0:
+        if ctx.guild.voice_client.is_playing and ctx.author.voice.channel == ctx.guild.voice_client.channel and len(self.database[ctx.guild]["queue"]) > 0:
             ctx.guild.voice_client.stop()
             self.database[ctx.guild]["task"].cancel()
+            del self.database[ctx.guild]["task"]
             self.database[ctx.guild]["queue"].remove(0)
             if len(self.database[ctx.guild]["queue"]) > 0:
                 self.database[ctx.guild]["task"] = asyncio.create_task(self.lets_play_it(ctx.guild))
+            if isinstance(ctx, SlashContext):
+                await ctx.send("Skipnuto")
         return
 
     @commands.command(name="play", aliases=["p"])
     @is_music_channel()
-    async def play(self, ctx, *, arg=None):
+    async def play(self, ctx: Union[SlashContext, commands.Context], *, arg=None):
         """Zadá novou písničku do fronty nebo pokračuje po pauze"""
         if not ctx.author.voice:
             await ctx.send("Nejdřív se připoj, pak budu hrát")
@@ -270,7 +273,7 @@ class Player(commands.Cog, name="player"):
 
     @commands.command(name="dc")
     @is_music_channel()
-    async def disconnect(self, ctx: commands.Context):
+    async def disconnect(self, ctx: Union[commands.Context, SlashContext]):
         """Odpojí bota"""
         if not ctx.guild.voice_client:
             await ctx.send("?!")
@@ -287,11 +290,13 @@ class Player(commands.Cog, name="player"):
         except KeyError:
             pass
         del self.database[ctx.guild]
+        if isinstance(ctx, SlashContext):
+            await ctx.send("Čiuuuus")
         return
 
     @commands.command(name="pause")
     @is_music_channel()
-    async def pause(self, ctx: commands.Context):
+    async def pause(self, ctx: Union[commands.Context, SlashContext]):
         """Pozastaví právě hranou písničku"""
         if not ctx.guild.voice_client:
             await ctx.send("?!")
@@ -304,12 +309,13 @@ class Player(commands.Cog, name="player"):
             await ctx.send("Tak s tímhle už nic neudělám hochu")
             return
         ctx.guild.voice_client.pause()
-        await ctx.send("👍")
+        if isinstance(ctx, SlashContext):
+            await ctx.send("👍")
         return
 
     @commands.command(name="queue", aliases=["q"])
     @is_music_channel()
-    async def print_queue(self, ctx: commands.Context):
+    async def print_queue(self, ctx: Union[commands.Context, SlashContext]):
         """Odešle frontu"""
         try:
             queue = self.database[ctx.guild]["queue"]
