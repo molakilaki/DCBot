@@ -185,7 +185,7 @@ class Player(commands.Cog, name="player"):
         if not ctx.author.voice:
             await ctx.send("Nejdřív se připoj, pak budu hrát")
             return
-        elif ctx.guild.voice_client is None:
+        elif ctx.guild.voice_client is None and arg is not None:
             await ctx.author.voice.channel.connect()
             self.database[ctx.guild] = {
                 "queue": Queue(),
@@ -207,11 +207,12 @@ class Player(commands.Cog, name="player"):
             self.database[ctx.guild]["disconnecter"].cancel()
         except KeyError:
             pass
-        if isinstance(ctx, commands.Context):
-            searching: discord.Message = await ctx.send(content="🌐 **Vyhledávám:** 🔎 `" + arg + "`")
         if "spotify" in arg:
-            data = 1
+            await ctx.send("Nevyhledávám ze spotify :(")
+            return
         else:
+            if isinstance(ctx, commands.Context):
+                searching: discord.Message = await ctx.send(content="🌐 **Vyhledávám:** 🔎 `" + arg + "`")
             data = get_info(arg)
 
         while data is None:
