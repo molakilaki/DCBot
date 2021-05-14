@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord_slash import SlashCommand, SlashContext
+from discord_slash import SlashCommand, SlashContext, error
 from discord_slash.utils.manage_commands import create_option
 import logging
 import requests as r
@@ -119,7 +119,12 @@ async def on_command_error(ctx: commands.Context, exc: commands.CommandError):
         traceback.print_exc()
         await ctx.send("<@" + str(470490558713036801) + ">, chyba")
 
-@
+
+@bot.event
+async def on_slash_command_error(ctx: SlashContext, exc: error.SlashCommandError):
+    print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    traceback.print_exc()
+    await ctx.channel.send("<@" + str(470490558713036801) + ">, chyba")
 
 
 @slash.slash(name="ping", description="Pong")
