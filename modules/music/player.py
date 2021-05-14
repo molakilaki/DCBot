@@ -432,13 +432,11 @@ class Player(commands.Cog, name="player"):
     async def _shuffle(self, ctx: SlashContext):
         await self.shuffle(ctx)
 
-    @cog_ext.cog_slash(name="aa", description="To samé jako play, ale pro Martina", options=[create_option(name="song",
-                                                                                                           required=False,
-                                                                                                           option_type=3,
-                                                                                                           description="Písnička")])
+    @cog_ext.cog_slash(name="aa", description="Stejné jako /play", options=[create_option(required=False, name="song", option_type=3, description="Písnička")])
     @is_music_channel()
-    async def _aplay(self, ctx: SlashContext, song=None):
-        await self._play(ctx, song)
+    async def _aaplay(self, ctx: SlashContext, song=None):
+        await ctx.defer()
+        await self.play(ctx, arg=song)
 
 
 class Disconnecter:
