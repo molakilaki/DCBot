@@ -142,6 +142,12 @@ async def _nick(ctx: SlashContext, user, nick=None):
     await change_nick(ctx, target=user, nick=nick)
 
 
+@slash.slash(name="exit", description="Vypne bota, může pouřít jen stepech")
+@commands.is_owner()
+async def _shutdown(ctx: SlashContext):
+    await shutdown(ctx)
+
+
 bot.add_cog(Countdown(bot))
 bot.add_cog(Monika(bot))
 bot.add_cog(Player(bot))

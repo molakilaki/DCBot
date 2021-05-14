@@ -166,12 +166,12 @@ class Player(commands.Cog, name="player"):
     @is_music_channel()
     async def skip(self, ctx: commands.Context):
         """Přeskočí na následující písničku"""
-        if ctx.guild.voice_client.is_playing and ctx.author.voice.channel == ctx.guild.voice_client.channel and len(
-                self.database[ctx.guild]["queue"]) > 0:
+        if ctx.guild.voice_client.is_playing and ctx.author.voice.channel == ctx.guild.voice_client.channel and len(self.database[ctx.guild]["queue"]) > 0:
             ctx.guild.voice_client.stop()
             self.database[ctx.guild]["task"].cancel()
             self.database[ctx.guild]["queue"].remove(0)
-            self.database[ctx.guild]["task"] = asyncio.create_task(self.lets_play_it(ctx.guild))
+            if len(self.database[ctx.guild]["queue"]) > 0:
+                self.database[ctx.guild]["task"] = asyncio.create_task(self.lets_play_it(ctx.guild))
         return
 
     @commands.command(name="play", aliases=["p"])
@@ -264,8 +264,7 @@ class Player(commands.Cog, name="player"):
         if not ctx.guild.voice_client:
             await ctx.send("?!")
             return
-        if not ctx.author.voice.channel == ctx.guild.voice_client.channel and len(
-                ctx.guild.voice_client.channel.members) < 2:
+        if not ctx.author.voice.channel == ctx.guild.voice_client.channel and len(ctx.guild.voice_client.channel.members) < 2:
             await ctx.send("Hraju jinde")
             return
 
@@ -293,6 +292,7 @@ class Player(commands.Cog, name="player"):
             await ctx.send("Tak s tímhle už nic neudělám hochu")
             return
         ctx.guild.voice_client.pause()
+        await ctx.send("👍")
         return
 
     @commands.command(name="queue", aliases=["q"])
@@ -310,8 +310,7 @@ class Player(commands.Cog, name="player"):
             else:
                 loop = "❌"
             embed = discord.Embed(title="Fronta písniček", colour=discord.Colour.gold())
-            now_playing = "[" + queue[0]["title"] + "](" + queue[0]["url"] + ") | `zadal " + queue[0][
-                "message"].author.name + "`"
+            now_playing = "[" + queue[0]["title"] + "](" + queue[0]["url"] + ") | `zadal " + queue[0]["message"].author.name + "`"
             embed.add_field(name="__Právě hraje:__", value=now_playing, inline=False)
             if len(queue) > 1:
                 i = 1
@@ -341,8 +340,8 @@ class Player(commands.Cog, name="player"):
         while len(self.database[guild]["queue"]) > 0:
             now_playing = self.database[guild]["queue"][0]
             name = "./downloads/" + now_playing["id"] + ".mp3"
-            await now_playing['message'].send("▶️ Teď hraje > `{0}`".format(now_playing['title']),
-                                              delete_after=now_playing["duration"])
+            await now_playing['message'].channel.send("▶️ Teď hraje > `{0}`".format(now_playing['title']),
+                                                      delete_after=now_playing["duration"])
             guild.voice_client.play(discord.FFmpegPCMAudio(name))
             try:
                 await asyncio.sleep(int(now_playing['duration']))
