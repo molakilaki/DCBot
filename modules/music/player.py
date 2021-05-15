@@ -11,6 +11,8 @@ import os
 
 MUSIC_CH_IDS = [822070192544022538, 789186662336167965]
 
+ERROR_DEL = 20
+
 TOO_LONG_REVENGE = [
     "když se zamiluje kůň",
     "I play pokemon go",
@@ -59,7 +61,7 @@ def is_music_channel():
         for chid in MUSIC_CH_IDS:
             if chid == ctx.channel.id:
                 return True
-        await ctx.send("Jsi ve špatném kanálu nebo nemáš dostatečná oprávnění")
+        await ctx.send("Jsi ve špatném kanálu", delete_after=ERROR_DEL)
         return False
 
     return commands.check(predicate)
@@ -125,7 +127,7 @@ class Player(commands.Cog, name="player"):
         if ctx.author.voice and ctx.author.voice.channel == ctx.guild.voice_client.channel:
             i = 0
             if len(self.database[ctx.guild]["queue"]) < 2:
-                await ctx.send("Není nic ve frontě na smazání")
+                await ctx.send("Není nic ve frontě na smazání", delete_after=ERROR_DEL)
                 return
             for i in range(1, len(self.database[ctx.guild]["queue"])):
                 self.database[ctx.guild]["queue"].remove(i)
@@ -136,17 +138,25 @@ class Player(commands.Cog, name="player"):
     @is_music_channel()
     async def remove_song(self, ctx: commands.Context, song: int):
         """Odstraní písničku na zadaném indexu"""
-        songeros = self.database[ctx.guild]["queue"][song]
-        self.database[ctx.guild]["queue"].remove(song)
-        await ctx.send("Odebráno `{0}` z fronty".format(songeros['title']))
+        if not(ctx.author.voice and ctx.guild.voice_client and ctx.author.voice.channel == ctx.guild.voice_client.channel):
+            await ctx.send("Nejsi ve stejném kanále", delete_after=ERROR_DEL)
+            return
+        if 0 < song <= len(self.database[ctx.guild]["queue"]):
+            songeros = self.database[ctx.guild]["queue"][song]
+            self.database[ctx.guild]["queue"].remove(song)
+            await ctx.send("Odebráno `{0}` z fronty".format(songeros['title']))
+        else:
+            await ctx.send("Zadaná hodnota neodpovídá žádné písničce ve frontě", delete_after=ERROR_DEL)
 
     @commands.command(name="shuffle")
     @is_music_channel()
     async def shuffle(self, ctx: commands.Context):
         """Zamíchá pořadí ve frontě"""
-        if ctx.author.voice and ctx.author.voice.channel == ctx.guild.voice_channel:
+        if ctx.author.voice and ctx.author.voice.channel == ctx.guild.voice_client.channel:
             self.database[ctx.guild]["queue"].shuffle()
             await ctx.send("Fronta promíchána")
+        else:
+            await ctx.send("Nejsi připojený ve stejném kanále jako já", delete_after=ERROR_DEL)
 
     @commands.command(name="loop")
     @is_music_channel()
@@ -154,7 +164,7 @@ class Player(commands.Cog, name="player"):
         """Přehrává právě hrající písničku neustále dokola"""
         if ctx.author.voice and ctx.author.voice.channel == ctx.guild.voice_client.channel:
             if self.database[ctx.guild] is None or len(self.database[ctx.guild]["queue"]) == 0:
-                await ctx.send("Nehraje nic. Použij loop až když bude něco hrát")
+                await ctx.send("Nehraje nic. Použij loop až když bude něco hrát", delete_after=ERROR_DEL)
                 return
             self.database[ctx.guild]["loop"] = not self.database[ctx.guild]["loop"]
             if self.database[ctx.guild]["loop"]:
@@ -167,7 +177,7 @@ class Player(commands.Cog, name="player"):
     @is_music_channel()
     async def skip(self, ctx: commands.Context):
         """Přeskočí na následující písničku"""
-        if ctx.guild.voice_client.is_playing and ctx.author.voice.channel == ctx.guild.voice_client.channel and len(self.database[ctx.guild]["queue"]) > 0:
+        if ctx.guild.voice_client and ctx.author.voice.channel == ctx.guild.voice_client.channel and len(self.database[ctx.guild]["queue"]) > 0:
             ctx.guild.voice_client.stop()
             self.database[ctx.guild]["task"].cancel()
             del self.database[ctx.guild]["task"]
@@ -176,6 +186,8 @@ class Player(commands.Cog, name="player"):
                 self.database[ctx.guild]["task"] = asyncio.create_task(self.lets_play_it(ctx.guild))
             if isinstance(ctx, SlashContext):
                 await ctx.send("Skipnuto")
+        else:
+            await ctx.send("Nejsem ve tvém kanále", delete_after=ERROR_DEL)
         return
 
     @commands.command(name="play", aliases=["p"])
@@ -183,7 +195,7 @@ class Player(commands.Cog, name="player"):
     async def play(self, ctx: Union[SlashContext, commands.Context], *, arg=None):
         """Zadá novou písničku do fronty nebo pokračuje po pauze"""
         if not ctx.author.voice:
-            await ctx.send("Nejdřív se připoj, pak budu hrát")
+            await ctx.send("Nejdřív se připoj, pak budu hrát", delete_after=ERROR_DEL)
             return
         elif ctx.guild.voice_client is None and arg is not None:
             await ctx.author.voice.channel.connect()
@@ -192,14 +204,14 @@ class Player(commands.Cog, name="player"):
                 "loop": False
             }
         elif ctx.guild.voice_client and not ctx.author.voice.channel == ctx.guild.voice_client.channel:
-            await ctx.send("Hraju jinde")
+            await ctx.send("Hraju jinde", delete_after=ERROR_DEL)
             return
         elif ctx.guild.voice_client and ctx.guild.voice_client.is_paused and arg is None:
             ctx.guild.voice_client.resume()
             await ctx.send("A jedem")
             return
         elif not arg:
-            await ctx.send("Zadej název písničky, nebo odkaz")
+            await ctx.send("Zadej název písničky, nebo odkaz", delete_after=ERROR_DEL)
             return
 
         try:
@@ -208,7 +220,7 @@ class Player(commands.Cog, name="player"):
         except KeyError:
             pass
         if "spotify" in arg:
-            await ctx.send("Nevyhledávám ze spotify :(")
+            await ctx.send("Nevyhledávám ze spotify :(", delete_after=ERROR_DEL)
             return
         else:
             if isinstance(ctx, commands.Context):
@@ -227,7 +239,7 @@ class Player(commands.Cog, name="player"):
                 'message': ctx,
                 'duration': int(data.get('duration'))}
         if song["duration"] > 10800:
-            await ctx.send("Moc dlouhé, vyber něco co má méně než 3 hodiny...")
+            await ctx.send("Moc dlouhé, vyber něco co má méně než 3 hodiny...", delete_after=ERROR_DEL)
             if isinstance(ctx, commands.Context):
                 await searching.delete()
             return
@@ -277,11 +289,10 @@ class Player(commands.Cog, name="player"):
     async def disconnect(self, ctx: commands.Context):
         """Odpojí bota"""
         if not ctx.guild.voice_client:
-            await ctx.send("?!")
+            await ctx.send("?!", delete_after=ERROR_DEL)
             return
-        if not ctx.author.voice.channel == ctx.guild.voice_client.channel and len(
-                ctx.guild.voice_client.channel.members) < 2:
-            await ctx.send("Hraju jinde")
+        if not ctx.author.voice.channel == ctx.guild.voice_client.channel or len(ctx.guild.voice_client.channel.members) < 2:
+            await ctx.send("Hraju jinde", delete_after=ERROR_DEL)
             return
 
         ctx.guild.voice_client.stop()
@@ -300,14 +311,14 @@ class Player(commands.Cog, name="player"):
     async def pause(self, ctx: commands.Context):
         """Pozastaví právě hranou písničku"""
         if not ctx.guild.voice_client:
-            await ctx.send("?!")
+            await ctx.send("?!", delete_after=ERROR_DEL)
             return
         if not ctx.guild.voice_client.channel == ctx.author.voice.channel:
-            await ctx.send("Jestli si se mnou chceš popovídat, tak se ke mně připoj")
+            await ctx.send("Jestli si se mnou chceš popovídat, tak se ke mně připoj", delete_after=ERROR_DEL)
             return
 
         if not ctx.guild.voice_client.is_playing() or ctx.guild.voice_client.is_paused():
-            await ctx.send("Tak s tímhle už nic neudělám hochu")
+            await ctx.send("Tak s tímhle už nic neudělám hochu", delete_after=ERROR_DEL)
             return
         ctx.guild.voice_client.pause()
         if isinstance(ctx, SlashContext):
@@ -321,7 +332,7 @@ class Player(commands.Cog, name="player"):
         try:
             queue = self.database[ctx.guild]["queue"]
         except KeyError:
-            await ctx.send("Pro tento kanál neexistuje fronta")
+            await ctx.send("Pro tento kanál neexistuje fronta", delete_after=ERROR_DEL)
             return
         if len(queue) > 0:
             if self.database[ctx.guild]["loop"]:
@@ -342,7 +353,7 @@ class Player(commands.Cog, name="player"):
                     i += 1
                     if i % 10 == 0:
                         embed.add_field(name="__Následují:__", value=next_playing, inline=False)
-                        embed.set_footer(text=("🔂Loop:" + loop), icon_url=ctx.author.avatar_url)
+                        embed.set_footer(text=("🔂Loop: " + loop), icon_url=ctx.author.avatar_url)
                         await ctx.send(embed=embed)
                         next_playing = ""
                         embed = discord.Embed(title="Pokračování fronty písniček")
@@ -350,7 +361,7 @@ class Player(commands.Cog, name="player"):
                 if i % 10 != 0:
                     embed.add_field(name="__Následují:__", value=next_playing, inline=False)
             if embed.fields:
-                embed.set_footer(text=("🔂Loop:" + loop), icon_url=ctx.author.avatar_url)
+                embed.set_footer(text=("🔂Loop: " + loop), icon_url=ctx.author.avatar_url)
                 await ctx.send(embed=embed)
         else:
             await ctx.send("Fronta je prázdná")
