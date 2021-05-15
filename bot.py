@@ -1,3 +1,5 @@
+import sys
+
 import discord
 from discord.ext import commands
 from discord_slash import SlashCommand, SlashContext, error
@@ -106,6 +108,8 @@ async def on_member_update(before: discord.Member, after: discord.Member):
 
 @bot.event
 async def on_command_error(ctx: commands.Context, exc: commands.CommandError):
+
+    err = sys.exc_info()
     if isinstance(exc, commands.MemberNotFound):
         await ctx.send("Uživatel nebyl nalezen")
     elif isinstance(exc, commands.MissingRequiredArgument):
@@ -116,7 +120,7 @@ async def on_command_error(ctx: commands.Context, exc: commands.CommandError):
         await ctx.send("Nelze použít v soukromém chatu")
     else:
         print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-        traceback.print_exc()
+        print(err)
         await ctx.send("<@" + str(470490558713036801) + ">, chyba")
 
 

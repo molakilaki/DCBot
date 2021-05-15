@@ -187,7 +187,7 @@ class Player(commands.Cog, name="player"):
             if isinstance(ctx, SlashContext):
                 await ctx.send("Skipnuto")
         else:
-            await ctx.send("Nejsem ve tvém kanále", delete_after=ERROR_DEL)
+            await ctx.send("Tobě právě nic nehraju", delete_after=ERROR_DEL)
         return
 
     @commands.command(name="play", aliases=["p"])
@@ -232,12 +232,15 @@ class Player(commands.Cog, name="player"):
 
         if data.get('entries'):
             data = data["entries"][0]
-
-        song = {'title': data.get('title'),
-                'url': data.get('webpage_url'),
-                'id': data.get('id'),
-                'message': ctx,
-                'duration': int(data.get('duration'))}
+        try:
+            song = {'title': data.get('title'),
+                    'url': data.get('webpage_url'),
+                    'id': data.get('id'),
+                    'message': ctx,
+                    'duration': int(data.get('duration'))}
+        except TypeError:
+            await ctx.send("Ups, chybička <3 Zkus to znovu", delete_after=ERROR_DEL)
+            return
         if song["duration"] > 10800:
             await ctx.send("Moc dlouhé, vyber něco co má méně než 3 hodiny...", delete_after=ERROR_DEL)
             if isinstance(ctx, commands.Context):
