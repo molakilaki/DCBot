@@ -62,9 +62,9 @@ async def among_get_active(ctx: commands.Context):
         return
     info = loads(info.text)
     stats = info["response"]
-    embed = discord.Embed(title="Among Us", colour=discord.Colour.red(), timestamp=datetime.now())
+    embed = discord.Embed(title="Among Us", colour=discord.Colour.dark_red(), timestamp=datetime.now())
     embed.set_thumbnail(url="https://cdn.akamai.steamstatic.com/steam/apps/945360/header.jpg?t=1619622456")
-    embed.description = "Among Us právě hraje {0} hráčů".format(stats["player_count"])
+    embed.description = "{0} aktivních hráčů".format(stats["player_count"])
     await ctx.send(embed=embed)
     return
 
