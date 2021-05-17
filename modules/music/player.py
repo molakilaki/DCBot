@@ -7,9 +7,11 @@ import logging
 import asyncio
 from random import shuffle
 from typing import Union
+from dotenv import dotenv_values
 import os
 
 MUSIC_CH_IDS = [822070192544022538, 789186662336167965]
+config = dotenv_values(".env")
 
 ERROR_DEL = 20
 
@@ -32,7 +34,7 @@ ytdl_format_options = {
     'quiet': True,
     'no_warnings': True,
     'default_search': 'auto',
-    'source_addreacs': '0.0.0.0',
+    'source_address': config["source_ip"],
     'output': r'youtube-dl',
     'postprocessors': [{
         'key': 'FFmpegExtractAudio',
@@ -52,7 +54,7 @@ stim = {
     'quiet': True,
     'no_warnings': False,
     'default_search': 'auto',
-    'source_address': '0.0.0.0'
+    'source_address': config["source_ip"]
 }
 
 

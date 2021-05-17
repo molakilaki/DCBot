@@ -1,21 +1,18 @@
 import sys
-
+from dotenv import dotenv_values
 import discord
 from discord.ext import commands
-from discord_slash import SlashCommand, SlashContext, error
+from discord_slash import SlashCommand, SlashContext
 from discord_slash.utils.manage_commands import create_option
 import logging
 import requests as r
-import traceback
 from datetime import datetime
 from json import loads
-from typing import Union
 from modules.teachers.teachers import Monika
 from modules.music.player import Player
 from modules.pipa.pipa import Hostinsky
 from modules.countdown import Countdown
 
-TOKEN = "ODE4ODk5MjkxMDQ4Mzc4NDIx.YEexZQ.KnLZNtYCxu-pwBQzqWAx7oRGoQo"
 debug = False
 
 DELETE_TIME = 20.0
@@ -26,7 +23,7 @@ if debug:
 else:
     logging.basicConfig(level=logging.INFO)
 
-
+config = dotenv_values(".env")
 bot = commands.Bot(command_prefix="-", owner_id=ADMIN, intents=discord.Intents.all())
 slash = SlashCommand(bot, sync_commands=True)
 
@@ -147,7 +144,7 @@ async def _nick(ctx: SlashContext, user, nick=None):
     await change_nick(ctx, target=user, nick=nick)
 
 
-@slash.slash(name="exit", description="Vypne bota, může pouřít jen stepech")
+@slash.slash(name="exit", description="Vypne bota, může použít jen stepech")
 @commands.is_owner()
 async def _shutdown(ctx: SlashContext):
     await shutdown(ctx)
@@ -157,5 +154,4 @@ bot.add_cog(Countdown(bot))
 bot.add_cog(Monika(bot))
 bot.add_cog(Player(bot))
 bot.add_cog(Hostinsky(bot))
-
-bot.run(TOKEN)
+bot.run(config["TOKEN"])
