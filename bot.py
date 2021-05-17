@@ -1,11 +1,10 @@
-import sys
 import discord
 from discord.ext import commands
 from discord_slash import SlashCommand, SlashContext
 from discord_slash.utils.manage_commands import create_option
 import logging
 import requests as r
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from json import loads
 from modules.teachers.teachers import Monika
 from modules.music.player import Player
@@ -19,6 +18,7 @@ debug = False
 
 DELETE_TIME = 20.0
 ADMIN = 470490558713036801
+tzone = timezone(timedelta(hours=-2))
 
 if debug:
     logging.basicConfig(level=logging.DEBUG)
@@ -58,11 +58,11 @@ async def among_get_active(ctx: commands.Context):
     url = "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?format=json&appid=945360"
     info = r.get(url)
     if info.status_code != 200:
-        await ctx.send("Chyba při získávání informací od Steamu")
+        await ctx.send("Chyba při získávání informací od Steamu", delete_after=DELETE_TIME)
         return
     info = loads(info.text)
     stats = info["response"]
-    embed = discord.Embed(title="Among Us", colour=discord.Colour.dark_red(), timestamp=datetime.now())
+    embed = discord.Embed(title="Among Us", colour=discord.Colour.from_rgb(197, 17, 17), timestamp=datetime.now(tz=tzone))
     embed.set_thumbnail(url="https://cdn.akamai.steamstatic.com/steam/apps/945360/header.jpg?t=1619622456")
     embed.description = "{0} aktivních hráčů".format(stats["player_count"])
     await ctx.send(embed=embed)
@@ -71,7 +71,7 @@ async def among_get_active(ctx: commands.Context):
 
 @bot.command(name="ping")
 async def pong(ctx: commands.Context):
-    await ctx.send("pong")
+    await ctx.send("Pong " + str(int(bot.latency * 1000)) + "ms")
 
 
 @bot.command(name="exit", hidden=True)
