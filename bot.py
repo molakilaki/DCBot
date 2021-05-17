@@ -1,5 +1,4 @@
 import sys
-from dotenv import dotenv_values
 import discord
 from discord.ext import commands
 from discord_slash import SlashCommand, SlashContext
@@ -12,6 +11,9 @@ from modules.teachers.teachers import Monika
 from modules.music.player import Player
 from modules.pipa.pipa import Hostinsky
 from modules.countdown import Countdown
+import os
+from os.path import join, dirname
+from dotenv import load_dotenv
 
 debug = False
 
@@ -23,10 +25,13 @@ if debug:
 else:
     logging.basicConfig(level=logging.INFO)
 
-config = dotenv_values(".env")
 bot = commands.Bot(command_prefix="-", owner_id=ADMIN, intents=discord.Intents.all())
 slash = SlashCommand(bot, sync_commands=True)
 
+dotenv_path = join(dirname(__file__), '.env')
+load_dotenv(dotenv_path)
+
+TOKEN = os.environ.get("TOKEN")
 
 # Nickname changer
 @bot.command(name="nick")
@@ -154,4 +159,4 @@ bot.add_cog(Countdown(bot))
 bot.add_cog(Monika(bot))
 bot.add_cog(Player(bot))
 bot.add_cog(Hostinsky(bot))
-bot.run(config["TOKEN"])
+bot.run(TOKEN)
