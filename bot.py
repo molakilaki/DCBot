@@ -33,7 +33,7 @@ load_dotenv(dotenv_path)
 
 TOKEN = os.environ.get("TOKEN")
 
-# Nickname changer
+
 @bot.command(name="nick")
 @commands.guild_only()
 async def change_nick(ctx: commands.Context, target: discord.Member, *, nick: str = None):
@@ -80,6 +80,12 @@ async def shutdown(ctx: commands.Context):
             await guild.voice_client.disconnect()
     await bot.close()
     exit(0)
+
+
+@bot.command(name="source", aliases=["src"])
+async def print_source(ctx: commands.Context):
+    """Odkaz na zdrojový kód bota"""
+    await ctx.send("https://github.com/stepech/DCBot")
 
 
 @bot.event
@@ -153,6 +159,11 @@ async def _nick(ctx: SlashContext, user, nick=None):
 @commands.is_owner()
 async def _shutdown(ctx: SlashContext):
     await shutdown(ctx)
+
+
+@slash.slash(name="source", description="Odkaz na zdrojový kód bota")
+async def _print_source(ctx: SlashContext):
+    await print_source(ctx)
 
 
 bot.add_cog(Countdown(bot))
