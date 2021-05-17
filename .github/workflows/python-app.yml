@@ -30,6 +30,6 @@ jobs:
       - name: Test with pytest
         env:
           TOKEN: ${{ secrets.TOKEN }}
-          source_ip: ${{ secrets.source_ip }}
+          source_ip: ${{ pytest.source_ip }}
         run: |
           pytest bot.py
