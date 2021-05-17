@@ -62,7 +62,10 @@ async def among_get_active(ctx: commands.Context):
         return
     info = loads(info.text)
     stats = info["response"]
-    await ctx.send("Among Us právě hraje {0} hráčů".format(stats["player_count"]))
+    embed = discord.Embed(title="Among Us", colour=discord.Colour.red(), timestamp=datetime.now())
+    embed.set_thumbnail(url="https://cdn.akamai.steamstatic.com/steam/apps/945360/header.jpg?t=1619622456")
+    embed.description = "Among Us právě hraje {0} hráčů".format(stats["player_count"])
+    await ctx.send(embed=embed)
     return
 
 
@@ -110,8 +113,6 @@ async def on_member_update(before: discord.Member, after: discord.Member):
 
 @bot.event
 async def on_command_error(ctx: commands.Context, exc: commands.CommandError):
-
-    err = sys.exc_info()
     if isinstance(exc, commands.MemberNotFound):
         await ctx.send("Uživatel nebyl nalezen")
     elif isinstance(exc, commands.MissingRequiredArgument):
@@ -122,8 +123,8 @@ async def on_command_error(ctx: commands.Context, exc: commands.CommandError):
         await ctx.send("Nelze použít v soukromém chatu")
     else:
         print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-        print(err)
         await ctx.send("<@" + str(470490558713036801) + ">, chyba")
+        raise exc
 
 
 @slash.slash(name="ping", description="Pong")
