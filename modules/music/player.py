@@ -61,7 +61,8 @@ def is_music_channel():
         for chid in MUSIC_CH_IDS:
             if chid == ctx.channel.id:
                 return True
-        await ctx.send("Jsi ve špatném kanálu", delete_after=ERROR_DEL)
+        if ctx.channel.id != 770445810978258984:
+            await ctx.send("Jsi ve špatném kanálu", delete_after=ERROR_DEL)
         return False
 
     return commands.check(predicate)
@@ -294,20 +295,24 @@ class Player(commands.Cog, name="player"):
         if not ctx.guild.voice_client:
             await ctx.send("?!", delete_after=ERROR_DEL)
             return
-        if not ctx.author.voice.channel == ctx.guild.voice_client.channel or len(ctx.guild.voice_client.channel.members) < 2:
+        if (ctx.author.voice is None or ctx.author.voice.channel != ctx.guild.voice_client.channel) and len(ctx.guild.voice_client.channel.members) > 1:
             await ctx.send("Hraju jinde", delete_after=ERROR_DEL)
             return
 
         ctx.guild.voice_client.stop()
         await ctx.guild.voice_client.disconnect()
-        try:
-            self.database[ctx.guild]["disconnecter"].cancel()
-        except KeyError:
-            pass
-        del self.database[ctx.guild]
         if isinstance(ctx, SlashContext):
             await ctx.send("Čiuuuus")
-        return
+
+    @commands.Cog.listener("on_voice_state_update")
+    async def _queue_cleanup(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
+        if after.channel is None and member.id == self.bot.user.id:
+            try:
+                self.database[member.guild]["disconnecter"].cancel()
+            except KeyError:
+                pass
+            del self.database[member.guild]
+            return
 
     @commands.command(name="pause")
     @is_music_channel()

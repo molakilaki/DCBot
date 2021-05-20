@@ -127,6 +127,8 @@ async def on_command_error(ctx: commands.Context, exc: commands.CommandError):
         pass
     elif isinstance(exc, commands.NoPrivateMessage):
         await ctx.send("Nelze použít v soukromém chatu")
+    elif isinstance(exc, commands.CheckFailure):
+        pass
     else:
         print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         await ctx.send("<@" + str(470490558713036801) + ">, chyba")
