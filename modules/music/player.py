@@ -6,7 +6,7 @@ import youtube_dl
 import logging
 import asyncio
 from random import shuffle
-from typing import Union
+from typing import Union, Optional
 import os
 
 MUSIC_CH_IDS = [822070192544022538, 789186662336167965]
@@ -68,9 +68,11 @@ def is_music_channel():
     return commands.check(predicate)
 
 
-def get_info(arg):
-    with youtube_dl.YoutubeDL(stim) as ydl:
-        info = ydl.extract_info(arg, download=False)
+async def get_info(arg):
+    ydl = youtube_dl.YoutubeDL(stim)
+    info = ydl.extract_info(arg, download=False)
+    if 'entries' in info:
+        info = info["entries"][0]
     return info
 
 
@@ -117,6 +119,14 @@ class Player(commands.Cog, name="player"):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         logging.info("Loaded player")
+        '''
+        Může obsahovat:
+        guild_id - int: [
+        task: asyncio.Task
+        queue: Queue
+        loop: bool
+        disconnecter: Disconnecter
+        '''
         self.database = {}
 
     @commands.command(name="clear")
@@ -127,11 +137,11 @@ class Player(commands.Cog, name="player"):
             return
         if ctx.author.voice and ctx.author.voice.channel == ctx.guild.voice_client.channel:
             i = 0
-            if len(self.database[ctx.guild]["queue"]) < 2:
+            if len(self.database[ctx.guild.id]["queue"]) < 2:
                 await ctx.send("Není nic ve frontě na smazání", delete_after=ERROR_DEL)
                 return
-            for i in range(1, len(self.database[ctx.guild]["queue"])):
-                self.database[ctx.guild]["queue"].remove(i)
+            for i in range(1, len(self.database[ctx.guild.id]["queue"])):
+                self.database[ctx.guild.id]["queue"].remove(i)
 
             await ctx.send("Smazáno `" + str(i) + "`")
 
@@ -142,9 +152,9 @@ class Player(commands.Cog, name="player"):
         if not(ctx.author.voice and ctx.guild.voice_client and ctx.author.voice.channel == ctx.guild.voice_client.channel):
             await ctx.send("Nejsi ve stejném kanále", delete_after=ERROR_DEL)
             return
-        if 0 < song <= len(self.database[ctx.guild]["queue"]):
-            songeros = self.database[ctx.guild]["queue"][song]
-            self.database[ctx.guild]["queue"].remove(song)
+        if 0 < song <= len(self.database[ctx.guild.id]["queue"]):
+            songeros = self.database[ctx.guild.id]["queue"][song]
+            self.database[ctx.guild.id]["queue"].remove(song)
             await ctx.send("Odebráno `{0}` z fronty".format(songeros['title']))
         else:
             await ctx.send("Zadaná hodnota neodpovídá žádné písničce ve frontě", delete_after=ERROR_DEL)
@@ -154,7 +164,7 @@ class Player(commands.Cog, name="player"):
     async def shuffle(self, ctx: commands.Context):
         """Zamíchá pořadí ve frontě"""
         if ctx.author.voice and ctx.author.voice.channel == ctx.guild.voice_client.channel:
-            self.database[ctx.guild]["queue"].shuffle()
+            self.database[ctx.guild.id]["queue"].shuffle()
             await ctx.send("Fronta promíchána")
         else:
             await ctx.send("Nejsi připojený ve stejném kanále jako já", delete_after=ERROR_DEL)
@@ -164,27 +174,29 @@ class Player(commands.Cog, name="player"):
     async def do_loop(self, ctx: commands.Context):
         """Přehrává právě hrající písničku neustále dokola"""
         if ctx.author.voice and ctx.author.voice.channel == ctx.guild.voice_client.channel:
-            if self.database[ctx.guild] is None or len(self.database[ctx.guild]["queue"]) == 0:
+            if self.database[ctx.guild.id] is None or len(self.database[ctx.guild.id]["queue"]) == 0:
                 await ctx.send("Nehraje nic. Použij loop až když bude něco hrát", delete_after=ERROR_DEL)
                 return
-            self.database[ctx.guild]["loop"] = not self.database[ctx.guild]["loop"]
-            if self.database[ctx.guild]["loop"]:
+            self.database[ctx.guild.id]["loop"] = not self.database[ctx.guild.id]["loop"]
+            if self.database[ctx.guild.id]["loop"]:
                 await ctx.send("🔂 Smyčka zapnuta")
             else:
                 await ctx.send("➡️ Smyčka vypnuta")
             return
+        if isinstance(ctx, SlashContext):
+            await ctx.send("Nope", delete_after=ERROR_DEL)
 
     @commands.command(name="skip", aliases=["next", "n"])
     @is_music_channel()
     async def skip(self, ctx: commands.Context):
         """Přeskočí na následující písničku"""
-        if ctx.guild.voice_client and ctx.author.voice.channel == ctx.guild.voice_client.channel and len(self.database[ctx.guild]["queue"]) > 0:
+        if ctx.guild.voice_client and ctx.author.voice.channel == ctx.guild.voice_client.channel and len(self.database[ctx.guild.id]["queue"]) > 0:
             ctx.guild.voice_client.stop()
-            self.database[ctx.guild]["task"].cancel()
-            del self.database[ctx.guild]["task"]
-            self.database[ctx.guild]["queue"].remove(0)
-            if len(self.database[ctx.guild]["queue"]) > 0:
-                self.database[ctx.guild]["task"] = asyncio.create_task(self.lets_play_it(ctx.guild))
+            self.database[ctx.guild.id]["task"].cancel()
+            del self.database[ctx.guild.id]["task"]
+            self.database[ctx.guild.id]["queue"].remove(0)
+            if len(self.database[ctx.guild.id]["queue"]) > 0:
+                self.database[ctx.guild.id]["task"] = asyncio.create_task(self.lets_play_it(ctx.guild))
             if isinstance(ctx, SlashContext):
                 await ctx.send("Skipnuto")
         else:
@@ -200,7 +212,7 @@ class Player(commands.Cog, name="player"):
             return
         elif ctx.guild.voice_client is None and arg is not None:
             await ctx.author.voice.channel.connect()
-            self.database[ctx.guild] = {
+            self.database[ctx.guild.id] = {
                 "queue": Queue(),
                 "loop": False
             }
@@ -217,22 +229,16 @@ class Player(commands.Cog, name="player"):
 
         try:
             # Pokud bot nehraje, má zaplý časovač který ho odpojí
-            self.database[ctx.guild]["disconnecter"].cancel()
+            self.database[ctx.guild.id]["disconnecter"].cancel()
+            del self.database[ctx.guild.id]["disconnecter"]
         except KeyError:
             pass
         if "spotify" in arg:
             await ctx.send("Nevyhledávám ze spotify :(", delete_after=ERROR_DEL)
             return
-        else:
-            if isinstance(ctx, commands.Context):
-                searching: discord.Message = await ctx.send(content="🌐 **Vyhledávám:** 🔎 `" + arg + "`")
-            data = get_info(arg)
-
-        while data is None:
-            await asyncio.sleep(0.1)
-
-        if data.get('entries'):
-            data = data["entries"][0]
+        if isinstance(ctx, commands.Context):
+            searching: discord.Message = await ctx.send(content="🌐 **Vyhledávám:** 🔎 `" + arg + "`")
+        data = await get_info(arg)
         try:
             song = {'title': data.get('title'),
                     'url': data.get('webpage_url'),
@@ -248,11 +254,7 @@ class Player(commands.Cog, name="player"):
                 await searching.delete()
             return
 
-        if not ctx.guild.voice_client:
-            if isinstance(ctx, commands.Context):
-                await searching.delete()
-            return
-        self.database[ctx.guild]["queue"].put(song)
+        self.database[ctx.guild.id]["queue"].put(song)
         name = str(song['id']) + ".mp3"
 
         try:
@@ -261,8 +263,13 @@ class Player(commands.Cog, name="player"):
         except FileNotFoundError:
             os.mkdir("/downloads")
             logging.warning("Created 'downloads' folder")
+            if name not in os.listdir("./downloads/"):
+                download_song(song['url'])
 
-        if "task" in self.database[ctx.guild]:
+        if isinstance(ctx, commands.Context):
+            await searching.delete()
+
+        if "task" in self.database[ctx.guild.id] and not self.database[ctx.guild.id]["task"].done():
             embed = discord.Embed(title=song["title"], url=song["url"], colour=discord.Colour.green())
             embed.set_author(name="Přidáno do fronty", icon_url=ctx.author.avatar_url)
             channel = "[" + data["channel"] + "](" + data["channel_url"] + ")"
@@ -274,7 +281,7 @@ class Player(commands.Cog, name="player"):
             embed.add_field(name="Délka", value=duration, inline=True)
             embed.add_field(name="Počet zhlédnutí", value='{:,}'.format(int(data["view_count"])), inline=True)
             embed.set_thumbnail(url=data["thumbnail"])
-            embed.add_field(name="Pozice ve frontě", value=str(len(self.database[ctx.guild]["queue"]) - 1))
+            embed.add_field(name="Pozice ve frontě", value=str(len(self.database[ctx.guild.id]["queue"]) - 1))
             if isinstance(ctx, commands.Context):
                 await ctx.channel.send(embed=embed)
             else:
@@ -285,7 +292,7 @@ class Player(commands.Cog, name="player"):
                 embed.set_author(name="Nalezeno", icon_url=ctx.author.avatar_url)
                 embed.set_thumbnail(url=data["thumbnail"])
                 await ctx.send(embed=embed)
-            self.database[ctx.guild]["task"] = asyncio.create_task(self.lets_play_it(ctx.guild))
+            self.database[ctx.guild.id]["task"] = asyncio.create_task(self.lets_play_it(ctx.guild))
         return
 
     @commands.command(name="dc")
@@ -299,7 +306,6 @@ class Player(commands.Cog, name="player"):
             await ctx.send("Hraju jinde", delete_after=ERROR_DEL)
             return
 
-        ctx.guild.voice_client.stop()
         await ctx.guild.voice_client.disconnect()
         if isinstance(ctx, SlashContext):
             await ctx.send("Čiuuuus")
@@ -308,11 +314,18 @@ class Player(commands.Cog, name="player"):
     async def _queue_cleanup(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
         if after.channel is None and member.id == self.bot.user.id:
             try:
-                self.database[member.guild]["disconnecter"].cancel()
+                self.database[member.guild.id]["disconnecter"].cancel()
+                del self.database[member.guild.id]["disconnecter"]
             except KeyError:
                 pass
-            del self.database[member.guild]
+            await asyncio.sleep(60)
+            if not member.guild.voice_client:
+                del self.database[member.guild.id]
             return
+        elif before.channel is None and member.id == self.bot.user.id:
+            if self.database[member.guild.id] and self.database[member.guild.id]["task"]:
+                self.database[member.guild.id]["task"].cancel()
+                self.database[member.guild.id]["task"] = asyncio.create_task(self.lets_play_it(member.guild))
 
     @commands.command(name="pause")
     @is_music_channel()
@@ -338,12 +351,12 @@ class Player(commands.Cog, name="player"):
     async def print_queue(self, ctx: commands.Context):
         """Odešle frontu"""
         try:
-            queue = self.database[ctx.guild]["queue"]
+            queue = self.database[ctx.guild.id]["queue"]
         except KeyError:
             await ctx.send("Pro tento kanál neexistuje fronta", delete_after=ERROR_DEL)
             return
         if len(queue) > 0:
-            if self.database[ctx.guild]["loop"]:
+            if self.database[ctx.guild.id]["loop"]:
                 loop = "✅"
             else:
                 loop = "❌"
@@ -376,24 +389,26 @@ class Player(commands.Cog, name="player"):
 
     async def lets_play_it(self, guild: discord.Guild):
         guild = guild
-        while len(self.database[guild]["queue"]) > 0:
-            now_playing = self.database[guild]["queue"][0]
-            name = "./downloads/" + now_playing["id"] + ".mp3"
-            await now_playing['message'].channel.send(
-                "▶️ Teď hraje > `{0}` ~ zadal `{1}`".format(now_playing['title'], now_playing['message'].author.name),
-                delete_after=now_playing["duration"])
-            guild.voice_client.play(discord.FFmpegPCMAudio(name))
-            try:
-                await asyncio.sleep(int(now_playing['duration']))
-            except asyncio.CancelledError:
-                return
-            if guild.voice_client is None:
-                break
-            if not self.database[guild]["loop"]:
-                self.database[guild]["queue"].remove(0)
+        now_playing = self.database[guild.id]["queue"][0]
+        name = "./downloads/" + now_playing["id"] + ".mp3"
+        await now_playing['message'].channel.send(
+            "▶️ Teď hraje > `{0}` ~ zadal `{1}`".format(now_playing['title'], now_playing['message'].author.name),
+            delete_after=now_playing["duration"])
+        guild.voice_client.play(discord.FFmpegPCMAudio(name))
+        try:
+            for i in range(int(now_playing['duration'])):
+                while guild.voice_client.is_paused():
+                    await asyncio.sleep(1)
+                await asyncio.sleep(1)
+        except asyncio.CancelledError:
+            return
+        if not self.database[guild.id]["loop"]:
+            self.database[guild.id]["queue"].remove(0)
+        if len(self.database[guild.id]["queue"]) == 0:
+            self.database[guild]["disconnecter"] = Disconnecter(guild.id)
             guild.voice_client.stop()
-        del self.database[guild]["task"]
-        self.database[guild]["disconnecter"] = Disconnecter(guild)
+        else:
+            self.database[guild.id]["task"] = asyncio.create_task(self.lets_play_it(guild))
         return
 
     '''
