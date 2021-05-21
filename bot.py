@@ -171,6 +171,6 @@ async def _print_source(ctx: SlashContext):
 
 bot.add_cog(Countdown(bot))
 bot.add_cog(Monika(bot))
-bot.add_cog(Player(bot))
+#bot.add_cog(Player(bot))
 bot.add_cog(Hostinsky(bot))
 bot.run(TOKEN)

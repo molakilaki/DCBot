@@ -6,7 +6,7 @@ import youtube_dl
 import logging
 import asyncio
 from random import shuffle
-from typing import Union, Optional
+from typing import Union
 import os
 
 MUSIC_CH_IDS = [822070192544022538, 789186662336167965]
@@ -410,6 +410,7 @@ class Player(commands.Cog, name="player"):
         else:
             self.database[guild.id]["task"] = asyncio.create_task(self.lets_play_it(guild))
         return
+
 
     '''
     SLASH COMMANDS
