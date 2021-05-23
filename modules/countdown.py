@@ -10,7 +10,7 @@ class Countdown(commands.Cog):
         self.message = None
         self.tzone = datetime.timezone(datetime.timedelta(hours=-2))
         self.maturita_start = datetime.datetime(2021, 6, 1, 5, tzinfo=self.tzone)
-        self.maturita_end = datetime.datetime(2021, 6, 7, 11, tzinfo=self.tzone)
+        self.maturita_end = datetime.datetime(2021, 6, 4, 12, tzinfo=self.tzone)
         self.mozolov = datetime.datetime(2021, 6, 25, 13, tzinfo=self.tzone)
         self.ragnarok = datetime.datetime(2021, 6, 29, 21, tzinfo=self.tzone)
         self.past = datetime.datetime(2014, 9, 1, tzinfo=self.tzone)
@@ -24,13 +24,13 @@ class Countdown(commands.Cog):
         embed.set_footer(text="stepech")
         embed.description = "Máme spolu za sebou " + str((now - self.past).days) + " dní"
         embed.set_image(url="https://media1.tenor.com/images/4a9ab37a73e888867267c16b700ec3dd/tenor.gif?itemid=14938794")
-        if abs(self.ragnarok - now) == self.ragnarok - now:
+        if abs(self.ragnarok - now) == self.ragnarok - now > datetime.timedelta(seconds=3500):
             colour = discord.Colour.blue()
-            if abs(self.mozolov - now) == self.mozolov - now:
+            if abs(self.mozolov - now) == self.mozolov - now > datetime.timedelta(seconds=3500):
                 colour = discord.Colour.green()
-                if abs(self.maturita_end - now) == self.maturita_end - now:
+                if abs(self.maturita_end - now) == self.maturita_end - now > datetime.timedelta(seconds=3500):
                     colour = discord.Colour.orange()
-                    if abs(self.maturita_start - now) == self.maturita_start - now:
+                    if abs(self.maturita_start - now) == self.maturita_start - now > datetime.timedelta(seconds=3500):
                         colour = discord.Colour.red()
                         hodnota = str((self.maturita_start - now).days) + "d, " + str(int((self.maturita_start - now).seconds / 3600)) + "h"
                         embed.add_field(name="Maturita", value=hodnota)
