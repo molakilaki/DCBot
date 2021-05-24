@@ -171,9 +171,15 @@ class Student:
     def is_done(self) -> bool:
         return self.times == []
 
-    def get_next(self):
+    def get_next_time(self) -> datetime.datetime:
         if self.times:
             return self.times[0]
+        else:
+            return None
+
+    def get_next_subject(self) -> str:
+        if self.subjects:
+            return self.subjects[0]
         else:
             return None
 
@@ -205,12 +211,13 @@ class Displayer(commands.Cog):
         self.message: discord.Message = await self.bot.get_channel(839882036407828480).fetch_message(846147778878373918)
         self.core.start()
 
-    @tasks.loop(minutes=5)
+    @tasks.loop(minutes=2)
     async def core(self):
         embed = discord.Embed(title="Maturita")
         now = datetime.datetime.now(tz=tzinfo)
         embed.timestamp = now
-        if (now - self.students[0].get_next()) > datetime.timedelta(0, 1800):  # Kontrola jestli už je u zkoušky 15 minut
+
+        while (now - self.students[0].get_next_time()) > datetime.timedelta(0, 1800):  # Kontrola jestli už je u zkoušky 15 minut
             self.students[0].check()
             if self.students[0].is_done():  # Kontrola jestli to byla jeho poslední zkouška
                 self.odmaturovali.append(self.students[0])
@@ -221,22 +228,105 @@ class Displayer(commands.Cog):
             embed.colour = discord.Colour.orange()
             await self.message.edit(embed=embed)
             return
-        if not self.students[0].is_today(now.day):
+
+        if self.students[0].is_today(now.day):
             embed = self.next_tomorrow(embed)
         else:
             embed = self.normal_run(embed)
 
+        embed.set_footer(text="stepech")
         await self.message.edit(content=None, embed=embed)
 
     def next_tomorrow(self, embed: discord.Embed) -> discord.Embed:
-        description = "Dnes už nikdo nematuruje\nDalší maturující je "
-        description += str(self.students[0]) + " - " + str(self.students[0].get_next().day) + ". června z"
-        description += subjects[self.students[0].subjects[0]]
-        description += "\nPoté následuje " + str(self.students[1]) + " z" + subjects[self.students[1].subjects[0]]
+        """V přípaadě že daný den již nikdo nematuruje, připraví speciální zprávu"""
+        description = "Dnes už nikdo nematuruje"
         embed.description = description
+
+        embed.add_field(name="Dále pokračuje", value="Z" + subjects[self.students[0].get_next_subject()])
+        embed.add_field(name=str(self.students[0]), value=str(self.students[0].get_next_time().day) + ". června - " + get_correct_time(self.students[0].get_next_time()))
+
+        students = ""
+        for i in range(1, 5):
+            try:
+                students += str(self.students[i]) + " z" + subjects[self.students[i].get_next_subject()] + "\n"
+            except IndexError:
+                break
+        if students != "":
+            embed.add_field(name="Později", value=students, inline=False)
         embed.colour = discord.Colour.dark_gold()
+        return self.add_odmaturovali(embed)
+
+    def normal_run(self, embed: discord.Embed) -> discord.Embed:
+        """Výpočet pro normální maturitní část dne"""
+        embed = embed
+        embed = correct_title(embed, self.students[0])
+
+        # Správně nastaví popis zprávy podle předmětů ze kterých se maturuje
+        desc = "Z" + subjects[self.students[0].get_next_subject()] + "\n"
+        f_subjects = "`" + self.students[0].subjects[0]
+        for subject in self.students[0].subjects[1:]:
+            f_subjects += " ~ " + subject
+        desc += "Celkem maturuje z " + f_subjects + "`"
+        embed.description = desc
+
+        # Pochytá výjimky v případě že je student poslední/poslední v daný den
+        if len(self.students) == 1:
+            embed.add_field(name=str(self.students[0]) + " je poslední", value="Hodně štěstí v budoucím životě")
+            return self.add_odmaturovali(embed)
+        if not self.students[1].is_today(self.students[0].get_next_time().day):
+            embed.add_field(name="Další maturující je zítra", value=str(self.students[1]) + " z" + subjects[self.students[1].get_next_subject()], inline=False)
+            return self.add_odmaturovali(embed)
+
+        # Přidá následujícího studenta
+        embed.add_field(name="Následuje", value=str(self.students[1]))
+        embed.add_field(name="Maturuje", value="Z"+subjects[self.students[1].get_next_subject()])
+        embed.add_field(name="Začátek", value="V " + get_correct_time(self.students[1].get_next_time()))
+
+        students = ""
+        for i in range(2, 6):
+            try:
+                students += str(self.students[i]) + " z" + subjects[self.students[i].get_next_subject()] + "\n"
+            except IndexError:
+                break
+        if students != "":
+            embed.add_field(name="Později", value=students, inline=False)
+
+        return self.add_odmaturovali(embed)
+
+    def add_odmaturovali(self, embed: discord.Embed) -> discord.Embed:
+        """Přidá na konec seznam všech studentů, kteří již odmaturovali"""
+        embed = embed
+        if not self.odmaturovali:
+            return embed
+        students_done = ""
+        for student in self.odmaturovali:
+            students_done += str(student) + "z "
+            students_done += "`" + student.subjects[0]
+            for subject in student.subjects[1:]:
+                students_done += " ~ " + subject
+            students_done += "`\n"
+        embed.add_field(name="Již odmaturovali (" + str(len(self.odmaturovali)) + "):", value=students_done, inline=False)
         return embed
 
 
-    def normal_run(self, embed: discord.Embed) -> discord.Embed:
-        pass
+def get_correct_time(time: datetime.datetime) -> str:
+    """Vezme si čas ve formátu datetime a vrátí string HH.MM"""
+    hour = str(time.hour)
+    if time.minute < 10:
+        minute = "0" + str(time.minute)
+    else:
+        minute = str(time.minute)
+    return hour + ":" + minute
+
+
+def correct_title(embed: discord.Embed, student: Student) -> discord.Embed:
+    """Upraví titul zprávy v případě že se student teprve maturovat chystá"""
+    embed = embed
+    now = datetime.datetime.now(tz=tzinfo)
+    if now < student.get_next_time():
+        title = str(student) + " se chystá maturovat v " + get_correct_time(student.get_next_time())
+        embed.title = title
+    else:
+        title = "Právě maturuje " + str(student)
+        embed.title = title
+    return embed
