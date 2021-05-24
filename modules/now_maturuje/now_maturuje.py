@@ -229,7 +229,7 @@ class Displayer(commands.Cog):
             await self.message.edit(embed=embed)
             return
 
-        if self.students[0].is_today(now.day):
+        if not self.students[0].is_today(now.day):
             embed = self.next_tomorrow(embed)
         else:
             embed = self.normal_run(embed)
