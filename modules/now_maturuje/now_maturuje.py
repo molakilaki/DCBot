@@ -242,11 +242,13 @@ class Displayer(commands.Cog):
         description = "Dnes už nikdo nematuruje"
         embed.description = description
 
+        # Přidá následujícího maturanta
         embed.add_field(name="Dále pokračuje", value="Z" + subjects[self.students[0].get_next_subject()])
         embed.add_field(name=str(self.students[0]), value=str(self.students[0].get_next_time().day) + ". června - " + get_correct_time(self.students[0].get_next_time()))
 
+        # Přidá pár studentů která maturují později
         students = ""
-        for i in range(1, 5):
+        for i in range(1, 4):
             try:
                 students += str(self.students[i]) + " z" + subjects[self.students[i].get_next_subject()] + "\n"
             except IndexError:
@@ -263,8 +265,8 @@ class Displayer(commands.Cog):
 
         # Správně nastaví popis zprávy podle předmětů ze kterých se maturuje
         desc = "Z" + subjects[self.students[0].get_next_subject()] + "\n"
-        f_subjects = "`" + self.students[0].subjects[0]
-        for subject in self.students[0].subjects[1:]:
+        f_subjects = "`" + self.students[0].perma_subjects[0]
+        for subject in self.students[0].perma_subjects[1:]:
             f_subjects += " ~ " + subject
         desc += "Celkem maturuje z " + f_subjects + "`"
         embed.description = desc
@@ -282,8 +284,9 @@ class Displayer(commands.Cog):
         embed.add_field(name="Maturuje", value="Z"+subjects[self.students[1].get_next_subject()])
         embed.add_field(name="Začátek", value="V " + get_correct_time(self.students[1].get_next_time()))
 
+        # Přidá pár studentů nakonec, kteří maturují později
         students = ""
-        for i in range(2, 6):
+        for i in range(2, 5):
             try:
                 students += str(self.students[i]) + " z" + subjects[self.students[i].get_next_subject()] + "\n"
             except IndexError:
@@ -300,9 +303,9 @@ class Displayer(commands.Cog):
             return embed
         students_done = ""
         for student in self.odmaturovali:
-            students_done += str(student) + "z "
-            students_done += "`" + student.subjects[0]
-            for subject in student.subjects[1:]:
+            students_done += str(student) + " z "
+            students_done += "`" + student.perma_subjects[0]
+            for subject in student.perma_subjects[1:]:
                 students_done += " ~ " + subject
             students_done += "`\n"
         embed.add_field(name="Již odmaturovali (" + str(len(self.odmaturovali)) + "):", value=students_done, inline=False)
@@ -325,8 +328,7 @@ def correct_title(embed: discord.Embed, student: Student) -> discord.Embed:
     now = datetime.datetime.now(tz=tzinfo)
     if now < student.get_next_time():
         title = str(student) + " se chystá maturovat v " + get_correct_time(student.get_next_time())
-        embed.title = title
     else:
         title = "Právě maturuje " + str(student)
-        embed.title = title
+    embed.title = title
     return embed
