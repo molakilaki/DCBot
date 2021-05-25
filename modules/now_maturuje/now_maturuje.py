@@ -7,7 +7,7 @@ from . import schedule_reader
 
 tzinfo = datetime.timezone(datetime.timedelta(0, 7200))
 
-subjects: dict[str, str] = {
+subjects = {
     "čj": " Českého jazyka",
     "m": " Matematiky",
     "bi": " Biologie",
