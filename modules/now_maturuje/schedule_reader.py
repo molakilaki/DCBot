@@ -14,7 +14,7 @@ def read_schedule(filename: str):
             if row[0] != "":
                 curr_day = int(row[0])
 
-            if curr_day == None:
+            if curr_day is None:
                 raise RuntimeError("u prvního řádku není určen den")
 
             if curr_day not in schedule:
