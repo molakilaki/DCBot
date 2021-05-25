@@ -129,7 +129,7 @@ class Displayer(commands.Cog):
         else:
             embed = self.normal_run(embed)
 
-        embed.set_footer(text="stepech")
+        embed.set_footer(text="stepech & vidmartin")
         await self.message.edit(content=None, embed=embed)
 
     def next_tomorrow(self, embed: discord.Embed) -> discord.Embed:
