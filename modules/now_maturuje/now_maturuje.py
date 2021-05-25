@@ -27,7 +27,7 @@ subjects = {
 }
 
 
-schedule: dict[int, list[list[str, str, int, int]]] = schedule_reader.read_schedule(
+schedule = schedule_reader.read_schedule(
     # chceme vzít soubor ve stejném adresáři, v němž je aktuální modul:
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "schedule.csv") 
 )
