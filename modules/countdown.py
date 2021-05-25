@@ -3,22 +3,23 @@ from discord.ext import tasks, commands
 import datetime
 import asyncio
 
+tzone = datetime.timezone(datetime.timedelta(0, 7200))
+
 
 class Countdown(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.message = None
-        self.tzone = datetime.timezone(datetime.timedelta(hours=-2))
-        self.maturita_start = datetime.datetime(2021, 6, 1, 5, tzinfo=self.tzone)
-        self.maturita_end = datetime.datetime(2021, 6, 4, 12, tzinfo=self.tzone)
-        self.mozolov = datetime.datetime(2021, 6, 25, 13, tzinfo=self.tzone)
-        self.ragnarok = datetime.datetime(2021, 6, 29, 21, tzinfo=self.tzone)
-        self.past = datetime.datetime(2014, 9, 1, tzinfo=self.tzone)
+        self.maturita_start = datetime.datetime(2021, 6, 1, 8, tzinfo=tzone)
+        self.maturita_end = datetime.datetime(2021, 6, 4, 16, tzinfo=tzone)
+        self.mozolov = datetime.datetime(2021, 6, 25, 16, tzinfo=tzone)
+        self.ragnarok = datetime.datetime(2021, 6, 30, 0, 0, tzinfo=tzone)
+        self.past = datetime.datetime(2014, 9, 1, tzinfo=tzone)
         self.countdown.start()
 
     @tasks.loop(hours=1)
     async def countdown(self):
-        now = datetime.datetime.now(tz=self.tzone)
+        now = datetime.datetime.now(tz=tzone)
         embed = discord.Embed(title="__Endgame__")
         embed.timestamp = now
         embed.set_footer(text="stepech")
