@@ -43,7 +43,7 @@ class Student:
             for exam_blok in day:
                 if exam_blok[0] == self.name:
                     self.subjects.append(exam_blok[1])
-                    self.times.append(datetime.datetime(2021, 6, d, exam_blok[2], exam_blok[3], tzinfo=tzinfo))
+                    self.times.append(datetime.datetime(2021, 6, d, int(exam_blok[2]), int(exam_blok[3]), tzinfo=tzinfo))
         self.perma_subjects = self.subjects
         self.times.sort()
 
@@ -65,14 +65,10 @@ class Student:
     def get_next_time(self) -> datetime.datetime:
         if self.times:
             return self.times[0]
-        else:
-            return None
 
     def get_next_subject(self) -> str:
         if self.subjects:
             return self.subjects[0]
-        else:
-            return None
 
     def get_subjects(self) -> list:
         return self.perma_subjects
@@ -88,11 +84,19 @@ class Displayer(commands.Cog):
         self.students = []
         students_checked = []
         self.days = []
-        for day in schedule.values():
-            for exam_blok in day:
-                if exam_blok[0] not in students_checked:
-                    self.students.append(Student(exam_blok[0]))
-                    students_checked.append(exam_blok[0])
+        try:
+            for day in schedule.values():
+                for exam_blok in day:
+                    if exam_blok[0] not in students_checked:
+                        self.students.append(Student(exam_blok[0]))
+                        students_checked.append(exam_blok[0])
+        except RuntimeError:
+            self.cog_unload()
+            return
+        except FileNotFoundError:
+            self.cog_unload()
+            return
+
         self.students.sort()
         self.message = None
         self.odmaturovali = []  # Seznam studentů co už odmaturovali
