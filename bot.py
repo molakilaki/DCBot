@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from discord_slash import SlashCommand, SlashContext
-from discord_slash.utils.manage_commands import create_option
+from discord_slash.utils.manage_commands import create_option, create_permission
 import logging
 import requests as r
 from datetime import datetime, timezone, timedelta
@@ -164,8 +164,7 @@ async def _nick(ctx: SlashContext, user, nick=None):
     await change_nick(ctx, target=user, nick=nick)
 
 
-@slash.slash(name="exit", description="Vypne bota, může použít jen stepech")
-@commands.is_owner()
+@slash.slash(name="exit", default_permission=False, permissions={498423239119208448: [create_permission(470490558713036801, 2, True)]})
 async def _shutdown(ctx: SlashContext):
     await shutdown(ctx)
 
