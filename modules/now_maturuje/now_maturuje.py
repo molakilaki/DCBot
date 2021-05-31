@@ -3,7 +3,7 @@ import discord
 from discord.ext import commands, tasks
 
 import os
-from . import schedule_reader
+from modules.now_maturuje import schedule_reader
 
 tzinfo = datetime.timezone(datetime.timedelta(0, 7200))
 

@@ -1,4 +1,3 @@
-
 import csv
 
 def read_schedule(filename: str):
@@ -6,8 +5,8 @@ def read_schedule(filename: str):
 
     curr_day = None
 
-    with open(filename, "r", newline="", encoding="utf-8") as file:
-        reader = csv.reader(file)
+    with open(filename, "r", newline="", encoding="utf-8-sig") as file:
+        reader = csv.reader(file, delimiter=";")
 
         for row in reader:
 
