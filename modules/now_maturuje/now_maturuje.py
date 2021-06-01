@@ -112,7 +112,7 @@ class Displayer(commands.Cog):
         now = datetime.datetime.now(tz=tzinfo)
         embed.timestamp = now
 
-        while (now - self.students[0].get_next_time()) > datetime.timedelta(0, 1800):  # Kontrola jestli už je u zkoušky 15 minut
+        while (now - self.students[0].get_next_time()) > datetime.timedelta(0, 900):  # Kontrola jestli už je u zkoušky 15 minut
             self.students[0].check()
             if self.students[0].is_done():  # Kontrola jestli to byla jeho poslední zkouška
                 self.odmaturovali.append(self.students[0])
