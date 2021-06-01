@@ -151,7 +151,7 @@ class Displayer(commands.Cog):
         if students != "":
             embed.add_field(name="Později", value=students, inline=False)
         embed.colour = discord.Colour.dark_gold()
-        return self.add_odmaturovali(embed)
+        return embed
 
     def normal_run(self, embed: discord.Embed) -> discord.Embed:
         """Výpočet pro normální maturitní část dne"""
@@ -169,10 +169,10 @@ class Displayer(commands.Cog):
         # Pochytá výjimky v případě že je student poslední/poslední v daný den
         if len(self.students) == 1:
             embed.add_field(name=str(self.students[0]) + " je poslední", value="Hodně štěstí v budoucím životě")
-            return self.add_odmaturovali(embed)
+            return embed
         if not self.students[1].is_today(self.students[0].get_next_time().day):
             embed.add_field(name="Další maturující je zítra", value=str(self.students[1]) + " z" + subjects[self.students[1].get_next_subject()], inline=False)
-            return self.add_odmaturovali(embed)
+            return embed
 
         # Přidá následujícího studenta
         embed.add_field(name="Následuje", value=str(self.students[1]))
@@ -189,7 +189,7 @@ class Displayer(commands.Cog):
         if students != "":
             embed.add_field(name="Později", value=students, inline=False)
 
-        return self.add_odmaturovali(embed)
+        return embed
 
     def add_odmaturovali(self, embed: discord.Embed) -> discord.Embed:
         """Přidá na konec seznam všech studentů, kteří již odmaturovali"""
