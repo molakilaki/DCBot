@@ -32,6 +32,7 @@ schedule = schedule_reader.read_schedule(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "schedule.csv") 
 )
 
+
 class Student:
     def __init__(self, name: str):
         self.name: str = name  # Jméno studenta
@@ -44,7 +45,7 @@ class Student:
                 if exam_blok[0] == self.name:
                     self.subjects.append(exam_blok[1])
                     self.times.append(datetime.datetime(2021, 6, d, int(exam_blok[2]), int(exam_blok[3]), tzinfo=tzinfo))
-        self.perma_subjects = self.subjects
+        self.perma_subjects = self.subjects.copy()
         self.times.sort()
 
     def __str__(self):
@@ -57,7 +58,7 @@ class Student:
         return not self.__gt__(other)
 
     def is_today(self, day: int) -> bool:
-        return self.times[0].day == day
+        return self.times[0].day <= day
 
     def is_done(self) -> bool:
         return self.times == []
@@ -99,7 +100,6 @@ class Displayer(commands.Cog):
 
         self.students.sort()
         self.message = None
-        self.odmaturovali = []  # Seznam studentů co už odmaturovali
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -115,7 +115,6 @@ class Displayer(commands.Cog):
         while (now - self.students[0].get_next_time()) > datetime.timedelta(0, 900):  # Kontrola jestli už je u zkoušky 15 minut
             self.students[0].check()
             if self.students[0].is_done():  # Kontrola jestli to byla jeho poslední zkouška
-                self.odmaturovali.append(self.students[0])
                 del self.students[0]
             self.students.sort()
         if len(self.students) == 0:
@@ -161,8 +160,8 @@ class Displayer(commands.Cog):
         # Správně nastaví popis zprávy podle předmětů ze kterých se maturuje
         desc = "Z" + subjects[self.students[0].get_next_subject()] + "\n"
         f_subjects = "`" + self.students[0].perma_subjects[0]
-        for subject in self.students[0].perma_subjects[1:]:
-            f_subjects += " ~ " + subject
+        for subj in self.students[0].perma_subjects[1:]:
+            f_subjects += " ~ " + subj
         desc += "Celkem maturuje z " + f_subjects + "`"
         embed.description = desc
 
@@ -189,21 +188,6 @@ class Displayer(commands.Cog):
         if students != "":
             embed.add_field(name="Později", value=students, inline=False)
 
-        return embed
-
-    def add_odmaturovali(self, embed: discord.Embed) -> discord.Embed:
-        """Přidá na konec seznam všech studentů, kteří již odmaturovali"""
-        embed = embed
-        if not self.odmaturovali:
-            return embed
-        students_done = ""
-        for student in self.odmaturovali:
-            students_done += str(student) + " z "
-            students_done += "`" + student.perma_subjects[0]
-            for subject in student.perma_subjects[1:]:
-                students_done += " ~ " + subject
-            students_done += "`\n"
-        embed.add_field(name="Již odmaturovali (" + str(len(self.odmaturovali)) + "):", value=students_done, inline=False)
         return embed
 
 
