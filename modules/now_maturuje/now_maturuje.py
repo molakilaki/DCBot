@@ -106,7 +106,7 @@ class Displayer(commands.Cog):
         self.message: discord.Message = await self.bot.get_channel(839882036407828480).fetch_message(846147778878373918)
         self.core.start()
 
-    @tasks.loop(minutes=2)
+    @tasks.loop(minutes=1)
     async def core(self):
         embed = discord.Embed(title="Maturita")
         now = datetime.datetime.now(tz=tzinfo)
