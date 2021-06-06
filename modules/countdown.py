@@ -10,8 +10,6 @@ class Countdown(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.message = None
-        self.maturita_start = datetime.datetime(2021, 6, 1, 8, tzinfo=tzone)
-        self.maturita_end = datetime.datetime(2021, 6, 4, 16, tzinfo=tzone)
         self.mozolov = datetime.datetime(2021, 6, 25, 16, tzinfo=tzone)
         self.ragnarok = datetime.datetime(2021, 6, 30, 0, 0, tzinfo=tzone)
         self.past = datetime.datetime(2014, 9, 1, tzinfo=tzone)
@@ -29,15 +27,6 @@ class Countdown(commands.Cog):
             colour = discord.Colour.blue()
             if abs(self.mozolov - now) == self.mozolov - now > datetime.timedelta(seconds=3500):
                 colour = discord.Colour.green()
-                if abs(self.maturita_end - now) == self.maturita_end - now > datetime.timedelta(seconds=3500):
-                    colour = discord.Colour.orange()
-                    if abs(self.maturita_start - now) == self.maturita_start - now > datetime.timedelta(seconds=3500):
-                        colour = discord.Colour.red()
-                        hodnota = str((self.maturita_start - now).days) + "d, " + str(int((self.maturita_start - now).seconds / 3600)) + "h"
-                        embed.add_field(name="Maturita", value=hodnota)
-                    else:
-                        hodnota = str((self.maturita_end - now).days) + "d, " + str(int((self.maturita_end - now).seconds / 3600)) + "h"
-                        embed.add_field(name="Konec maturity", value=hodnota)
                 hodnota = str((self.mozolov - now).days) + "d, " + str(int((self.mozolov - now).seconds / 3600)) + "h"
                 embed.add_field(name="Mozolov", value=hodnota)
             hodnota = str((self.ragnarok - now).days) + "d, " + str(int((self.ragnarok - now).seconds / 3600)) + "h"

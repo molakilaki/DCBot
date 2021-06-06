@@ -10,7 +10,6 @@ from modules.teachers.teachers import Monika
 from modules.music.player import Player
 from modules.pipa.pipa import Hostinsky
 from modules.countdown import Countdown
-from modules.now_maturuje.now_maturuje import Displayer
 import os
 from os.path import join, dirname
 from dotenv import load_dotenv
@@ -178,5 +177,4 @@ bot.add_cog(Countdown(bot))
 bot.add_cog(Monika(bot))
 #bot.add_cog(Player(bot))
 bot.add_cog(Hostinsky(bot))
-bot.add_cog(Displayer(bot))
 bot.run(TOKEN)
