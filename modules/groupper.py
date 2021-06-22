@@ -4,7 +4,8 @@ from discord.ext import commands
 MESSAGE = "Reakcí na tuhle zprávu si přidej roli podle své fakulty:" \
           "\nPro MFF - UK reaguj :one:" \
           "\nPro FIT - ČVUT reaguj :two:" \
-          "\nPro FIT - VUT reaguj :three:"
+          "\nPro FIT - VUT reaguj :three:" \
+          "\nPro odebrání role kontaktuj <@470490558713036801> nebo <@273172762330267650>"
 
 
 class Grouper(commands.Cog):
