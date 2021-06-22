@@ -10,6 +10,7 @@ from modules.teachers.teachers import Monika
 from modules.music.player import Player
 from modules.pipa.pipa import Hostinsky
 from modules.countdown import Countdown
+from modules.groupper import Grouper
 import os
 from os.path import join, dirname
 from dotenv import load_dotenv
@@ -74,7 +75,7 @@ async def pong(ctx: commands.Context):
     await ctx.send("Pong " + str(int(bot.latency * 1000)) + "ms")
 
 
-@bot.command(name="abcdefg", hidden=True)
+@bot.command(name="template", hidden=True)
 async def placeholder(ctx: commands.Context):
     await ctx.send("%placeholder%")
 
@@ -177,4 +178,5 @@ bot.add_cog(Countdown(bot))
 bot.add_cog(Monika(bot))
 #bot.add_cog(Player(bot))
 bot.add_cog(Hostinsky(bot))
+bot.add_cog(Grouper(bot))
 bot.run(TOKEN)
