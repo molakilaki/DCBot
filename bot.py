@@ -141,12 +141,12 @@ async def on_command_error(ctx: commands.Context, exc: commands.CommandError):
         raise exc
 
 
-@slash.slash(name="ping", description="Pong")
+@slash.slash(name="ping", description="Pong", guild_ids=[])
 async def _ping(ctx: SlashContext):
     await pong(ctx)
 
 
-@slash.slash(name="among", description="Aktivní počet Among Us hráčů na Steamu")
+@slash.slash(name="among", description="Aktivní počet Among Us hráčů na Steamu", guild_ids=[])
 async def _among(ctx: SlashContext):
     await among_get_active(ctx)
 
@@ -159,19 +159,22 @@ async def _among(ctx: SlashContext):
                       create_option(name="nick",
                                     description="nová přezdívka",
                                     option_type=3,
-                                    required=False)])
+                                    required=False)],
+             guild_ids=[])
 async def _nick(ctx: SlashContext, user, nick=None):
     await change_nick(ctx, target=user, nick=nick)
 
 
-@slash.slash(name="exit", default_permission=False, permissions={498423239119208448: [create_permission(470490558713036801, 2, True)]})
+@slash.slash(name="exit", default_permission=False, permissions={498423239119208448: [create_permission(470490558713036801, 2, True)]},
+             guild_ids=[])
 async def _shutdown(ctx: SlashContext):
     await shutdown(ctx)
 
 
-@slash.slash(name="source", description="Odkaz na zdrojový kód bota")
+@slash.slash(name="source", description="Odkaz na zdrojový kód bota", guild_ids=[])
 async def _print_source(ctx: SlashContext):
     await print_source(ctx)
+
 
 
 bot.add_cog(Countdown(bot))
