@@ -11,7 +11,7 @@ class Countdown(commands.Cog):
         self.bot = bot
         self.message = None
         self.mozolov = datetime.datetime(2021, 6, 25, 16, tzinfo=tzone)
-        self.ragnarok = datetime.datetime(2021, 6, 30, 0, 0, tzinfo=tzone)
+        self.ragnarok = datetime.datetime(2021, 7, 1, tzinfo=tzone)
         self.past = datetime.datetime(2014, 9, 1, tzinfo=tzone)
         self.countdown.start()
 
