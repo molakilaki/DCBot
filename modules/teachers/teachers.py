@@ -123,11 +123,12 @@ class Monika(commands.Cog):
         "Snaha byla. Teda alespoň doufám.",
         "Vy jste teda jelito.(25%)",
         "Tak znovu a lépe.",
+        "{0.display_name}, bývalo to s vámi lepší",
         "Tudy cesta nevede.",
         "Dovoluji si vyjádřit svůj nesouhlas.",
         "Zamyslete se nad tím, co jste právě řekl.",
         "Zkuste se více soustředit.",
-        "Jak pravil Einstein: pouze dvě věci jsou nekonečné. Vesmír a lidská hloupost. U té první si však nejsem tak jist. O té druhé jste mě právě ujistil vy!",
+        "Jak pravil Einstein: pouze dvě věci jsou nekonečné. Vesmír a lidská hloupost. U té první si však nejsem tak jistá. O té druhé jste mě právě ujistil vy!",
         "Vy jste se dneska asi špatně vyspal, že?",
         "Moc rozumu jste teda nepobral.(25%)",
         "Kdybyste dával pozor, tak byste věděl.",
@@ -228,7 +229,7 @@ class Monika(commands.Cog):
                         sorry_chance = float(percent_match.group(1)) / 100  # nastavit šanci na omluvu
                         msg = msg[:-len(percent_match.group(0))]  # zkrátit message o to, co odpovídá regexu (na konci)
 
-                    await self.sendMessage(msg, webhook)
+                    await self.sendMessage(msg.format(message.author), webhook)
 
                     if random.random() <= sorry_chance:
                         # Mončina omluva
